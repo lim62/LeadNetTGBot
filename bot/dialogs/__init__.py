@@ -1,0 +1,2 @@
+from bot.dialogs.admin_dialogs.admin_dialog import admin_main_dialog
+from bot.dialogs.user_dialogs.user_dialog import user_main_dialog

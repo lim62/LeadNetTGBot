@@ -1,0 +1,1 @@
+from bot.config.config import Config, load_config

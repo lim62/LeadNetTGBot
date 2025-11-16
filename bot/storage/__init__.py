@@ -1,0 +1,1 @@
+from bot.storage.redis_storage import load_storage

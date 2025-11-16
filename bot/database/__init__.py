@@ -1,0 +1,1 @@
+from bot.database.base import Base
