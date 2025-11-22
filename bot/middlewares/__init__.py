@@ -1,2 +1,1 @@
-from bot.middlewares.i18n_middleware import TranslatorRunnerMiddleware
-from bot.middlewares.session_middleware import SessionMiddleware
+from bot.middlewares.data_middleware import DataMiddleware

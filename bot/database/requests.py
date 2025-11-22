@@ -1,147 +1,128 @@
-from sqlalchemy import update, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.dialects.postgresql import insert
-from bot.database.models.admins import Admin
+from bot.database.models.accounts import Account
 from bot.database.models.users import User
 
-async def insert_admin(
-    session: AsyncSession,
+async def upsert_user(
+    session_maker: async_sessionmaker[AsyncSession],
     telegram_id: int,
-    mailing_text: str,
-    photo: str
-) -> None:
-    stmt = insert(Admin).values(
-        dict(
-            telegram_id=telegram_id,
-            mailing_text=mailing_text,
-            photo=photo
+    username: str = 'asd',
+    date: str = None,
+    stage: str = 'asd',
+    messages: int = 200,
+    offer: str = 'asd',
+    stories: str = 'asd',
+    from_ref: bool = False
+):
+    if date is None:
+        date = datetime.now().strftime("%H:%M %d.%m.%Y")
+    stmt = (
+        insert(User)
+        .values(
+            dict(
+                telegram_id=telegram_id,
+                username=username,
+                date=date,
+                stage=stage,
+                messages=messages,
+                offer=offer,
+                stories=stories,
+                from_ref=from_ref
+            )
+        )
+        .on_conflict_do_update(
+            index_elements=[User.telegram_id],
+            set_=dict(
+                stage=stage
+            )
         )
     )
-    stmt = stmt.on_conflict_do_update(
-        index_elements=['telegram_id'],
-        set_=dict(
-            mailing_text=mailing_text,
-            photo=photo
+    async with session_maker() as session:
+        await session.execute(stmt)
+        await session.commit()
+    
+async def get_all_users(session_maker: async_sessionmaker[AsyncSession]) -> list[dict]:
+    async with session_maker() as session:
+        result = await session.execute(select(User))
+        users = result.scalars().all()
+        return [
+            {
+                "telegram_id": user.telegram_id,
+                "username": user.username,
+                "date": user.date,
+                "stage": user.stage,
+                "messages": user.messages,
+                "offer": user.offer,
+                "stories": user.stories,
+                "from_ref": user.from_ref,
+            }
+            for user in users
+        ]
+
+async def upsert_account(
+    session_maker: async_sessionmaker[AsyncSession],
+    phone: str,
+    api_id: int,
+    api_hash: str,
+    app_version: str,
+    device_model: str,
+    system_version: str,
+    lang_code: str,
+    password: str,
+    proxy_scheme: str,
+    proxy_hostname: str,
+    proxy_port: int,
+    proxy_username: str,
+    proxy_password: str
+):
+    to_insert = dict(
+        phone=phone,
+        api_id=api_id,
+        api_hash=api_hash,
+        app_version=app_version,
+        device_model=device_model,
+        system_version=system_version,
+        lang_code=lang_code,
+        password=password,
+        proxy_scheme=proxy_scheme,
+        proxy_hostname=proxy_hostname,
+        proxy_port=proxy_port,
+        proxy_username=proxy_username,
+        proxy_password=proxy_password
+    )
+    stmt = (
+        insert(Account)
+        .values(to_insert)
+        .on_conflict_do_update(
+            index_elements=[Account.phone],
+            set_=to_insert
         )
     )
-    await session.execute(stmt)
-    await session.commit()
-
-async def insert_text(
-    session: AsyncSession,
-    telegram_id: int,
-    mailing_text: str
-) -> None:
-    stmt = update(Admin).where(Admin.telegram_id == telegram_id).values(dict(mailing_text=mailing_text))
-    await session.execute(stmt)
-    await session.commit()
-
-async def insert_photo(
-    session: AsyncSession,
-    telegram_id: int,
-    photo: str
-) -> None:
-    stmt = update(Admin).where(Admin.telegram_id == telegram_id).values(dict(photo=photo))
-    await session.execute(stmt)
-    await session.commit()
-
-async def select_admin(
-    session: AsyncSession
-) -> dict:
-    stmt = select(Admin)
-    result = await session.execute(stmt)
-    return result.scalars().all()
-
-async def insert_user(
-    session: AsyncSession,
-    telegram_id: int,
-    username: str,
-    name: str,
-    age: str,
-    story: str,
-    design: str
-) -> None:
-    stmt = insert(User).values(
-        {
-            'telegram_id': telegram_id,
-            'username': username,
-            'name': name,
-            'age': age,
-            'story': story,
-            'design': design
-        }
-    )
-    stmt = stmt.on_conflict_do_update(
-        index_elements=['telegram_id'],
-        set_=dict(
-            username=username,
-            name=name,
-            age=age,
-            story=story,
-            design=design
-        )
-    )
-    await session.execute(stmt)
-    await session.commit()
-
-async def insert_name(
-    session: AsyncSession,
-    telegram_id: int,
-    name: str
-) -> None:
-    stmt = update(User).where(User.telegram_id == telegram_id).values({'name': name})
-    await session.execute(stmt)
-    await session.commit()
-
-async def insert_age(
-    session: AsyncSession,
-    telegram_id: int,
-    age: str
-) -> None:
-    stmt = update(User).where(User.telegram_id == telegram_id).values({'age': age})
-    await session.execute(stmt)
-    await session.commit()
-
-async def insert_story(
-    session: AsyncSession,
-    telegram_id: int,
-    story: str
-) -> None:
-    stmt = update(User).where(User.telegram_id == telegram_id).values({'story': story})
-    await session.execute(stmt)
-    await session.commit()
-
-async def insert_design(
-    session: AsyncSession,
-    telegram_id: int,
-    design: str
-) -> None:
-    stmt = update(User).where(User.telegram_id == telegram_id).values({'design': design})
-    await session.execute(stmt)
-    await session.commit()
-
-async def update_user(
-    session: AsyncSession,
-    telegram_id: int,
-    name: str = None,
-    age: str = None,
-    story: str = None,
-    design: str = None
-) -> None:
-    stmt = update(User).where(User.telegram_id == telegram_id).values(
-                                                                        {
-                                                                            'name': name,
-                                                                            'age': age,
-                                                                            'story': story,
-                                                                            'design': design
-                                                                        }
-                                                                      )
-    await session.execute(stmt)
-    await session.commit()
-
-async def select_user(
-    session: AsyncSession
-) -> dict:
-    stmt = select(User)
-    result = await session.execute(stmt)
-    return result.scalars().all()
+    async with session_maker() as session:
+        await session.execute(stmt)
+        await session.commit()
+    
+async def get_all_accounts(session_maker: async_sessionmaker[AsyncSession]) -> list[dict]:
+    async with session_maker() as session:
+        result = await session.execute(select(Account))
+        accounts = result.scalars().all()
+        return [
+            {
+                "phone": acc.phone,
+                "api_id": acc.api_id,
+                "api_hash": acc.api_hash,
+                "app_version": acc.app_version,
+                "device_model": acc.device_model,
+                "system_version": acc.system_version,
+                "lang_code": acc.lang_code,
+                "password": acc.password,
+                "proxy_scheme": acc.proxy_scheme,
+                "proxy_hostname": acc.proxy_hostname,
+                "proxy_port": acc.proxy_port,
+                "proxy_username": acc.proxy_username,
+                "proxy_password": acc.proxy_password,
+            }
+            for acc in accounts
+        ]

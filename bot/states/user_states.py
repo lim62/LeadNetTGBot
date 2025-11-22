@@ -1,8 +1,10 @@
 from aiogram.fsm.state import State, StatesGroup
 
 class UserMainSG(StatesGroup):
-    name = State()
-    age = State()
-    story = State()
-    design = State()
-    final = State()
+    fastlane = State()
+    product = State()
+    sources_traffic = State()
+    model = State()
+    economics = State()
+    time = State()
+    support = State()

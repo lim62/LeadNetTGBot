@@ -4,6 +4,7 @@ from environs import Env
 class BotConfig(BaseModel):
     TOKEN: SecretStr
     ADMINS_IDS: list[int]
+    ADMIN_CHAT: int
 
 class LoggingConfig(BaseModel):
     LEVEL: str
@@ -11,6 +12,7 @@ class LoggingConfig(BaseModel):
 
 class DatabaseCongig(BaseModel):
     DSN: PostgresDsn
+    is_echo: bool
 
 class RedisConfig(BaseModel):
     HOST: str
@@ -28,14 +30,16 @@ def load_config(path: str | None = None) -> Config:
     return Config(
         bot=BotConfig(
             TOKEN=env('TOKEN'),
-            ADMINS_IDS=env.list('ADMINS_IDS')
+            ADMINS_IDS=env.list('ADMINS_IDS'),
+            ADMIN_CHAT=env.int('ADMIN_CHAT')
         ),
         log=LoggingConfig(
             LEVEL=env('LOGGING_LEVEL'),
             FORMAT=env('LOGGING_FORMAT')
         ),
         database=DatabaseCongig(
-            DSN=env('POSTGRES_DSN')
+            DSN=env('POSTGRES_DSN'),
+            is_echo=True
         ),
         redis=RedisConfig(
             HOST=env('REDIS_HOST'),

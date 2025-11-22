@@ -1,1 +1,1 @@
-from bot.storage.redis_storage import load_storage
+from bot.storage.redis_storage import load_storage, get_rstorage

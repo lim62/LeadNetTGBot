@@ -1,0 +1,2 @@
+ID         | Username   | Date             | Stage | Messages | Offer     | Stories | FromRef
+8243174411 | @mrRobot40 | 13:25 22.11.2025 | menu  | 200      | Something | Som     | False  
