@@ -7,6 +7,7 @@ from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from fluentogram import TranslatorRunner
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+from app.settings import add_client, send_code_client
 from bot.states import AdminMainSG
 from bot.utils import format_database, process_users_mailing
 from bot.keyboards import (
@@ -50,6 +51,7 @@ async def cmd_admin_enter_api_id(msg: Message, i18n: TranslatorRunner, state: FS
         text=i18n.text.admin.enter_api_id(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    await rstorage.set(msg.from_user.id, f'phone:{msg.text};')
     await state.set_state(AdminMainSG.api_id)
 
 @admin_router.message(StateFilter(AdminMainSG.api_id))
@@ -58,6 +60,8 @@ async def cmd_admin_enter_api_hash(msg: Message, i18n: TranslatorRunner, state: 
         text=i18n.text.admin.enter_api_hash(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'api_id:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.api_hash)
 
 @admin_router.message(StateFilter(AdminMainSG.api_hash))
@@ -66,6 +70,8 @@ async def cmd_admin_enter_app_version(msg: Message, i18n: TranslatorRunner, stat
         text=i18n.text.admin.enter_app_version(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'api_hash:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.app_version)
 
 @admin_router.message(StateFilter(AdminMainSG.app_version))
@@ -74,6 +80,8 @@ async def cmd_admin_enter_device_model(msg: Message, i18n: TranslatorRunner, sta
         text=i18n.text.admin.enter_device_model(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'app_version:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.device_model)
 
 @admin_router.message(StateFilter(AdminMainSG.device_model))
@@ -82,6 +90,8 @@ async def cmd_admin_enter_system_version(msg: Message, i18n: TranslatorRunner, s
         text=i18n.text.admin.enter_system_version(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'device_model:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.system_version)
 
 @admin_router.message(StateFilter(AdminMainSG.system_version))
@@ -90,6 +100,8 @@ async def cmd_admin_enter_lang_code(msg: Message, i18n: TranslatorRunner, state:
         text=i18n.text.admin.enter_lang_code(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'system_version:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.lang_code)
 
 @admin_router.message(StateFilter(AdminMainSG.lang_code))
@@ -98,6 +110,8 @@ async def cmd_admin_enter_password(msg: Message, i18n: TranslatorRunner, state: 
         text=i18n.text.admin.enter_password(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'lang_code:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.password)
 
 @admin_router.message(StateFilter(AdminMainSG.password))
@@ -106,6 +120,8 @@ async def cmd_admin_enter_proxy_scheme(msg: Message, i18n: TranslatorRunner, sta
         text=i18n.text.admin.enter_proxy_scheme(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'password:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.proxy_scheme)
 
 @admin_router.message(StateFilter(AdminMainSG.proxy_scheme))
@@ -114,6 +130,8 @@ async def cmd_admin_enter_proxy_host(msg: Message, i18n: TranslatorRunner, state
         text=i18n.text.admin.enter_proxy_host(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'proxy_scheme:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.proxy_host)
 
 @admin_router.message(StateFilter(AdminMainSG.proxy_host))
@@ -122,6 +140,8 @@ async def cmd_admin_enter_proxy_port(msg: Message, i18n: TranslatorRunner, state
         text=i18n.text.admin.enter_proxy_port(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'proxy_hostname:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.proxy_port)
 
 @admin_router.message(StateFilter(AdminMainSG.proxy_port))
@@ -130,6 +150,8 @@ async def cmd_admin_enter_proxy_username(msg: Message, i18n: TranslatorRunner, s
         text=i18n.text.admin.enter_proxy_username(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'proxy_port:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.proxy_username)
 
 @admin_router.message(StateFilter(AdminMainSG.proxy_username))
@@ -138,22 +160,42 @@ async def cmd_admin_enter_proxy_password(msg: Message, i18n: TranslatorRunner, s
         text=i18n.text.admin.enter_proxy_password(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    value: str = await rstorage.get(name=msg.from_user.id) + f'proxy_username:{msg.text};'
+    await rstorage.set(name=msg.from_user.id, value=value)
     await state.set_state(AdminMainSG.proxy_password)
 
 @admin_router.message(StateFilter(AdminMainSG.proxy_password))
-async def cmd_admin_enter_enter_code(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+async def cmd_admin_enter_code(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis, session_maker: async_sessionmaker) -> None:
+    to_start: dict = {}
     await msg.answer(
         text=i18n.text.admin.enter_code(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
-    await state.set_state(AdminMainSG.enter_code)
+    data: str = await rstorage.get(name=msg.from_user.id) + f'proxy_password:{msg.text}'
+    to_start = {part.split(':')[0]: part.split(':')[1] for part in data.split(';')}
+    try:
+        await state.set_state(AdminMainSG.enter_code)
+        await add_client(data=to_start)
+    except Exception:
+        await state.set_state(AdminMainSG.fail_auth)
 
 @admin_router.message(StateFilter(AdminMainSG.enter_code))
-async def cmd_admin_account_done(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+async def cmd_admin_account_done(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis, session_maker: async_sessionmaker) -> None:
+    await send_code_client(session_maker=session_maker, code=int(msg.text))
     await msg.answer(
         text=i18n.text.admin.account_added(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
+    await rstorage.delete(msg.from_user.id)
+    await state.clear()
+
+@admin_router.message(StateFilter(AdminMainSG.fail_auth))
+async def cmd_admin_fail_auth(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+    await msg.answer(
+        text=i18n.text.admin.account_failed(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
+    )
+    await rstorage.delete(msg.from_user.id)
     await state.clear()
 
 @admin_router.callback_query(F.data == 'mailing')

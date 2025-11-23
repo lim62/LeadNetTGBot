@@ -7,4 +7,4 @@ class UserMainSG(StatesGroup):
     model = State()
     economics = State()
     time = State()
-    support = State()
+    load_chats = State()

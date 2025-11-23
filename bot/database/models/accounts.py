@@ -7,7 +7,7 @@ class Account(Base):
 
     phone: Mapped[str] = mapped_column(String, nullable=False, primary_key=True)
     api_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    api_hash: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    api_hash: Mapped[int] = mapped_column(String, nullable=False)
     app_version: Mapped[str] = mapped_column(String, nullable=False)
     device_model: Mapped[str] = mapped_column(String, nullable=False)
     system_version: Mapped[str] = mapped_column(String, nullable=False)

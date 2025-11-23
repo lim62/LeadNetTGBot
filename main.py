@@ -7,6 +7,7 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from fluentogram import TranslatorHub
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
+from app.settings import start_clients
 from bot.config import Config, load_config
 from bot.handlers import admin_router, user_router
 from bot.filters import AdminFilter
@@ -32,7 +33,7 @@ async def main() -> None:
         echo=config.database.is_echo
     )
     async with engine.begin() as connection:
-        # await connection.run_sync(Base.metadata.drop_all)
+        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     session_maker = async_sessionmaker(engine, expire_on_commit=False)
     rstorage = get_rstorage(config)
@@ -41,6 +42,7 @@ async def main() -> None:
     dp.update.middleware(DataMiddleware(rstorage=rstorage, bot=bot, config=config, session_maker=session_maker))
     admin_router.message.filter(AdminFilter(config))
     admin_router.callback_query.filter(AdminFilter(config))
+    await start_clients(session_maker=session_maker, rstorage=rstorage)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
