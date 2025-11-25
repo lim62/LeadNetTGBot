@@ -17,4 +17,3 @@ class AdminMainSG(StatesGroup):
     proxy_username = State()
     proxy_password = State()
     enter_code = State()
-    fail_auth = State()

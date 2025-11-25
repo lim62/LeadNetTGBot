@@ -15,8 +15,8 @@ from bot.keyboards import (
     get_fastlane_kbd, get_delta_kbd, get_send_kbd,
     get_success_kbd, get_standard_kbd, get_time_kbd,
     get_leadpanel_kbd, get_pulse_kbd, get_tarif_kbd,
-    get_workpulse_kbd, get_totarif_kbd, get_pulse_kbd1,
-    get_offer_kdb, get_zalp_kbd, get_afterzalp_kbd
+    get_workpulse_kbd, get_offer_kdb, get_zalp_kbd,
+    get_afterzalp_kbd
 )
 
 user_router = Router()
@@ -52,8 +52,9 @@ async def cmd_start(obj: Message | CallbackQuery, i18n: TranslatorRunner, state:
 @user_router.callback_query(F.data == 'back_pulse')
 async def cmd_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
-    await call.message.answer(
-        text=i18n.text.user.pulse(),
+    await call.message.answer_photo(
+        photo='https://t.me/sksjkdksnsjdjdndksm/26',
+        caption=i18n.text.user.pulse(name=call.from_user.first_name),
         reply_markup=get_pulse_kbd(i18n=i18n)
     )
     await upsert_user(
@@ -62,94 +63,119 @@ async def cmd_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: 
         stage='pulse'
     )
 
-@user_router.callback_query(F.data == 'pulse1')
-@user_router.callback_query(F.data == 'back_pulse1')
-async def cmd_pulse1(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+@user_router.callback_query(F.data == 'pusk_prepare')
+async def cmd_pusk_prepare(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
-    await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/26',
-        caption=i18n.text.user.pulse1(name=call.from_user.first_name),
-        reply_markup=get_pulse_kbd1(i18n=i18n)
+    msg = await call.message.answer_photo(
+        photo='https://t.me/sksjkdksnsjdjdndksm/27',
+        caption=i18n.text.user.pusk_prepare()
     )
+    await msg.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, down='how_works_pulse', have_up=False))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pusk_prepare'
+    )
+
+@user_router.callback_query(F.data == 'how_works_pulse')
+async def cmd_what_stage11(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+    await call.message.edit_media(
+        media=InputMediaPhoto(
+            media='https://t.me/sksjkdksnsjdjdndksm/28',
+            caption=i18n.text.user.how_works_pulse()
+        )
+    )
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='pusk_prepare', down='tg_chats'))
     await upsert_user(
         session_maker=session_maker,
         telegram_id=call.from_user.id,
         stage='pulse'
     )
 
-@user_router.callback_query(F.data == 'pusk_prepare')
-async def cmd_pusk_prepare(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.delete()
-    msg = await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/27',
-        caption=i18n.text.user.pusk_prepare()
-    )
-    await msg.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, down='what_pulse1', have_up=False))
-
-@user_router.callback_query(F.data == 'what_pulse1')
-async def cmd_what_stage11(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage11()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='pusk_prepare', down='what_stage12'))
-
-@user_router.callback_query(F.data == 'what_stage12')
-async def cmd_what_stage12(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+@user_router.callback_query(F.data == 'tg_chats')
+async def cmd_what_stage12(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/24',
-            caption=i18n.text.user.what_stage12()
+            caption=i18n.text.user.tg_chats()
         )
     )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what_pulse1', down='what_stage22'))
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='how_works_pulse', down='offer_pulse'))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
-@user_router.callback_query(F.data == 'what_stage22')
-async def cmd_what_stage22(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+@user_router.callback_query(F.data == 'offer_pulse')
+async def cmd_what_stage22(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/23',
-            caption=i18n.text.user.what_stage22()
+            caption=i18n.text.user.offer_pulse()
         )
     )
     await call.message.edit_reply_markup(reply_markup=get_offer_kdb(i18n=i18n))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
-@user_router.callback_query(F.data == 'what_stage33')
-async def cmd_what_stage33(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+@user_router.callback_query(F.data == 'test_zalp')
+async def cmd_what_stage33(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage33()
+            caption=i18n.text.user.test_zalp()
         )
     )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage22', down='what_stage44', down_text=i18n.btn.zalp()))
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='offer_pulse', down='give_chats', down_text=i18n.btn.zalp()))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
-@user_router.callback_query(F.data == 'what_stage44')
-async def cmd_what_stage44(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+@user_router.callback_query(F.data == 'give_chats')
+async def cmd_what_stage44(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage44()
+            caption=i18n.text.user.give_chats()
         )
     )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage33', down='what_stage55', down_text=i18n.btn.upload()))
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='test_zalp', down='upload_chats', down_text=i18n.btn.upload()))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
-@user_router.callback_query(F.data == 'what_stage55')
-async def cmd_what_stage55(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+@user_router.callback_query(F.data == 'upload_chats')
+async def cmd_what_stage55(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage55()
+            caption=i18n.text.user.upload_chats()
         )
     )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage44', have_down=False))
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='give_chats', have_down=False))
     await state.set_state(UserMainSG.load_chats)
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
 @user_router.message(StateFilter(UserMainSG.load_chats))
-async def cmd_load_chats(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+@user_router.callback_query(F.data == 'msg_zalp')
+async def cmd_load_chats(obj: Message | CallbackQuery, i18n: TranslatorRunner, state: FSMContext, session_maker: async_sessionmaker) -> None:
+    msg = obj.message if isinstance(obj, CallbackQuery) else obj
+    ide = obj.from_user.id
     links = [link.strip() for link in msg.text.split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in msg.text.split('\n') if link.startswith('t.me')]
+    if isinstance(obj, CallbackQuery):
+        await obj.message.delete()
     if len(links) == 0:
         await msg.answer(
             text=i18n.text.user.no_links(),
@@ -163,36 +189,51 @@ async def cmd_load_chats(msg: Message, i18n: TranslatorRunner, state: FSMContext
     else:
         await msg.answer_photo(
             photo='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage56(chats='\n'.join(links), chats_count=len(links)),
-            reply_markup=get_workpulse_kbd(i18n=i18n, up='use_own', down='what_stage66', down_text=i18n.btn.use_standard(), up_text=i18n.btn.use_own())
+            caption=i18n.text.user.msg_zalp(),
+            reply_markup=get_workpulse_kbd(i18n=i18n, up='use_own', down='start_zalp', down_text=i18n.btn.use_standard(), up_text=i18n.btn.use_own())
         )
         await state.clear()
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=ide,
+        stage='pulse'
+    )
 
 @user_router.callback_query(F.data == 'use_own')
-async def cmd_use_own(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+async def cmd_use_own(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/28',
             caption=i18n.text.user.use_own(),
         )
     )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage56', have_down=False))
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='msg_zalp', have_down=False))
     await state.set_state(UserMainSG.load_offer)
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
 @user_router.message(StateFilter(UserMainSG.load_offer))
-@user_router.callback_query(F.data == 'what_stage66')
-async def cmd_what_stage66(obj: Message | CallbackQuery, i18n: TranslatorRunner) -> None:
+@user_router.callback_query(F.data == 'start_zalp')
+async def cmd_start_zalp(obj: Message | CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     msg = obj if isinstance(obj, Message) else obj.message
     if not isinstance(obj, Message):
         await obj.message.delete()
     await msg.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.what_stage66(),
+        caption=i18n.text.user.start_zalp(),
         reply_markup=get_zalp_kbd(i18n=i18n)
     )
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=obj.from_user.id,
+        stage='pulse'
+    )
 
-@user_router.callback_query(F.data == 'what_stage77')
-async def cmd_what_stage77(call: CallbackQuery, i18n: TranslatorRunner, rstorage: Redis) -> None:
+@user_router.callback_query(F.data == 'zalp_done')
+async def cmd_zalp_done(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     msg = await call.message.answer(text=i18n.text.user.flow())
     await asyncio.sleep(2)
@@ -203,201 +244,89 @@ async def cmd_what_stage77(call: CallbackQuery, i18n: TranslatorRunner, rstorage
     msg = await msg.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage77()
+            caption=i18n.text.user.zalp_done()
         )
     )
     await msg.edit_reply_markup(reply_markup=get_afterzalp_kbd(i18n=i18n))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
+    )
 
 @user_router.callback_query(F.data == 'continue_prepare')
-async def cmd_what11(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+async def cmd_continue_prepare(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.edit_media(
         media=InputMediaPhoto(
             media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what11()
+            caption=i18n.text.user.how_works_continue()
         )
     )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, down='what22', have_up=False))
-
-@user_router.callback_query(F.data == 'what22')
-async def cmd_what22(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what22()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what11', down='what33'))
-
-@user_router.callback_query(F.data == 'what33')
-async def cmd_what33(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what33()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what22', down='what44'))
-
-@user_router.callback_query(F.data == 'what44')
-async def cmd_what44(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what44()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what33', down='what55'))
-
-@user_router.callback_query(F.data == 'what55')
-async def cmd_what55(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what55()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what44', down='what66'))
-
-@user_router.callback_query(F.data == 'what_stage88')
-async def cmd_what_stage88(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage88()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, down='what_stage99', have_up=False))
-
-@user_router.callback_query(F.data == 'what_stage99')
-async def cmd_what_stage99(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_media(
-        media=InputMediaPhoto(
-            media='https://t.me/sksjkdksnsjdjdndksm/28',
-            caption=i18n.text.user.what_stage99()
-        )
-    )
-    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage88', down='tarifs', down_text=i18n.btn.tarifs()))
-
-@user_router.callback_query(F.data == 'what_pulse')
-async def cmd_what_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.what_pulse(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='what_stage1', have_up=False)
-    )
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, down='accs_prepare', have_up=False))
     await upsert_user(
         session_maker=session_maker,
         telegram_id=call.from_user.id,
-        stage='what_pulse'
+        stage='pulse'
     )
 
-@user_router.callback_query(F.data == 'what_stage1')
-async def cmd_what_stage1(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.what_stage1(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='what_pulse', down='what_stage2')
+@user_router.callback_query(F.data == 'accs_prepare')
+async def cmd_accs_prepare(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+    await call.message.edit_media(
+        media=InputMediaPhoto(
+            media='https://t.me/sksjkdksnsjdjdndksm/28',
+            caption=i18n.text.user.accs_prepare()
+        )
     )
-
-@user_router.callback_query(F.data == 'what_stage2')
-async def cmd_what_stage2(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.what_stage2(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage1', down='what_stage3')
-    )
-
-@user_router.callback_query(F.data == 'what_stage3')
-async def cmd_what_stage3(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.what_stage3(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage2', down='what_stage4')
-    )
-
-@user_router.callback_query(F.data == 'what_stage4')
-async def cmd_what_stage4(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.what_stage4(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage3', down='what_stage5')
-    )
-
-@user_router.callback_query(F.data == 'what_stage5')
-async def cmd_what_stage5(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.what_stage5(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='what_stage4', have_down=False)
-    )
-
-@user_router.callback_query(F.data == 'work_pulse')
-async def cmd_work_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_works(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='how_stage1', have_up=False)
-    )
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='how_works_continue', down='antispam'))
     await upsert_user(
         session_maker=session_maker,
         telegram_id=call.from_user.id,
-        stage='how_pulse'
+        stage='pulse'
     )
 
-@user_router.callback_query(F.data == 'how_stage1')
-async def cmd_how_stage1(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage1(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='work_pulse', down='how_stage2')
+@user_router.callback_query(F.data == 'antispam')
+async def cmd_antispam(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+    await call.message.edit_media(
+        media=InputMediaPhoto(
+            media='https://t.me/sksjkdksnsjdjdndksm/28',
+            caption=i18n.text.user.antispam()
+        )
+    )
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='accs_prepare', down='base_pulse'))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
     )
 
-@user_router.callback_query(F.data == 'how_stage2')
-async def cmd_how_stage2(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage2(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage1', down='how_stage3')
+@user_router.callback_query(F.data == 'base_pulse')
+async def cmd_base_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+    await call.message.edit_media(
+        media=InputMediaPhoto(
+            media='https://t.me/sksjkdksnsjdjdndksm/28',
+            caption=i18n.text.user.base_pulse()
+        )
+    )
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='antispam', down='benifits_pulse'))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
     )
 
-@user_router.callback_query(F.data == 'how_stage3')
-async def cmd_how_stage3(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage3(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage2', down='how_stage4')
+@user_router.callback_query(F.data == 'benifits_pulse')
+async def cmd_benifits_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+    await call.message.edit_media(
+        media=InputMediaPhoto(
+            media='https://t.me/sksjkdksnsjdjdndksm/28',
+            caption=i18n.text.user.benifits_pulse()
+        )
     )
-
-@user_router.callback_query(F.data == 'how_stage4')
-async def cmd_how_stage4(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage4(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage3', down='how_stage5')
-    )
-
-@user_router.callback_query(F.data == 'how_stage5')
-async def cmd_how_stage5(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage5(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage4', down='how_stage6')
-    )
-
-@user_router.callback_query(F.data == 'how_stage6')
-async def cmd_how_stage6(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage6(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage5', down='how_stage7')
-    )
-
-@user_router.callback_query(F.data == 'how_stage7')
-async def cmd_how_stage7(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage7(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage6', down='how_stage8')
-    )
-
-@user_router.callback_query(F.data == 'how_stage8')
-async def cmd_how_stage8(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage8(),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='how_stage7', down='how_stage9')
-    )
-
-@user_router.callback_query(F.data == 'how_stage9')
-async def cmd_how_stage9(call: CallbackQuery, i18n: TranslatorRunner) -> None:
-    await call.message.edit_text(
-        text=i18n.text.user.how_stage9(),
-        reply_markup=get_totarif_kbd(i18n=i18n)
+    await call.message.edit_reply_markup(reply_markup=get_workpulse_kbd(i18n=i18n, up='base_pulse', down='what66'))
+    await upsert_user(
+        session_maker=session_maker,
+        telegram_id=call.from_user.id,
+        stage='pulse'
     )
 
 @user_router.callback_query(F.data == 'tarifs')

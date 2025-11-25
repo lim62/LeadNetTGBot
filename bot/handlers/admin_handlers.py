@@ -225,9 +225,9 @@ async def cmd_admin_enter_proxy_password(msg: Message, i18n: TranslatorRunner, s
 async def cmd_admin_enter_code(msg: Message, i18n: TranslatorRunner, state: FSMContext, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
     to_start: dict = {}
     await msg.answer(
-            text=i18n.text.admin.enter_code(),
-            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
-        )
+        text=i18n.text.admin.enter_code(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
+    )
     data: str = await rstorage.get(name=msg.from_user.id) + f'proxy_password:{msg.text}'
     to_start = {part.split(':')[0]: part.split(':')[1] for part in data.split(';')}
     try:

@@ -8,7 +8,7 @@ async def load_storage(config: Config) -> RedisStorage:
         redis=Redis(
             host=config.redis.HOST,
             port=config.redis.PORT,
-            db=1,
+            db=0,
             decode_responses=True,
             encoding='utf-8'
         ),
@@ -19,9 +19,9 @@ async def load_storage(config: Config) -> RedisStorage:
 
 def get_rstorage(config: Config) -> Redis:
     return Redis(
-            host=config.redis.HOST,
-            port=config.redis.PORT,
-            db=1,
-            decode_responses=True,
-            encoding='utf-8'
-        )
+        host=config.redis.HOST,
+        port=config.redis.PORT,
+        db=1,
+        decode_responses=True,
+        encoding='utf-8'
+    )
