@@ -7,7 +7,7 @@ def get_start_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=i18n.btn.pulse(), callback_data='pulse'), InlineKeyboardButton(text=i18n.btn.pulse(), callback_data='pulse1')],
             [InlineKeyboardButton(text=i18n.btn.verification(), callback_data='verification'), InlineKeyboardButton(text=i18n.btn.neurohub(), callback_data='neurohub')],
             [InlineKeyboardButton(text=i18n.btn.pro_reactor(), callback_data='pro_reactor'), InlineKeyboardButton(text=i18n.btn.traffic(), callback_data='traffic')],
-            [InlineKeyboardButton(text=i18n.btn.support(), url='https://t.me')]
+            [InlineKeyboardButton(text=i18n.btn.support(), url='https://t.me/assistpers')]
         ]
     )
 
@@ -55,6 +55,35 @@ def get_workpulse_kbd(i18n: TranslatorRunner, up_text: str | None = None, down_t
     kbd.append([InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse1')])
     return InlineKeyboardMarkup(
         inline_keyboard=kbd
+    )
+
+def get_offer_kdb(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=i18n.btn.previous(), callback_data='what_stage12')],
+            [InlineKeyboardButton(text=i18n.btn.examples_offer(), callback_data='examples_offer')],
+            [InlineKeyboardButton(text=i18n.btn.constructor(), callback_data='constructor1')],
+            [InlineKeyboardButton(text=i18n.btn.next(), callback_data='what_stage33')],
+            [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse1')]
+        ]
+    )
+
+def get_zalp_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=i18n.btn.start_zalp(), callback_data='what_stage77')],
+            [InlineKeyboardButton(text=i18n.btn.edit_zalp(), callback_data='what_stage55')],
+            [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse1')]
+        ]
+    )
+
+def get_afterzalp_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=i18n.btn.continue_prepare(), callback_data='continue_prepare')],
+            [InlineKeyboardButton(text=i18n.btn.tarifs(), callback_data='tarifs')],
+            [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse1')]
+        ]
     )
 
 def get_totarif_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:

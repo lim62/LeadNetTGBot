@@ -2,6 +2,7 @@ import asyncio
 import sys
 import logging
 
+from pyrogram import Client
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
@@ -33,16 +34,16 @@ async def main() -> None:
         echo=config.database.is_echo
     )
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+        # await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     session_maker = async_sessionmaker(engine, expire_on_commit=False)
     rstorage = get_rstorage(config)
+    clients: list[Client] = await start_clients(session_maker=session_maker, rstorage=rstorage)
     dp = Dispatcher(storage=await load_storage(config), _translator_hub=translator_hub)
     dp.include_routers(admin_router, user_router)
-    dp.update.middleware(DataMiddleware(rstorage=rstorage, bot=bot, config=config, session_maker=session_maker))
+    dp.update.middleware(DataMiddleware(config=config, bot=bot, clients=clients, rstorage=rstorage, session_maker=session_maker))
     admin_router.message.filter(AdminFilter(config))
     admin_router.callback_query.filter(AdminFilter(config))
-    await start_clients(session_maker=session_maker, rstorage=rstorage)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

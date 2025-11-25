@@ -8,3 +8,4 @@ class UserMainSG(StatesGroup):
     economics = State()
     time = State()
     load_chats = State()
+    load_offer = State()

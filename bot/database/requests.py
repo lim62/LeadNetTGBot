@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 from bot.database.models.accounts import Account
@@ -103,7 +103,16 @@ async def upsert_account(
     async with session_maker() as session:
         await session.execute(stmt)
         await session.commit()
-    
+
+async def delete_account(
+    session_maker: async_sessionmaker[AsyncSession],
+    phone: str
+) -> None:
+    stmt = delete(Account).where(Account.phone == phone)
+    async with session_maker() as session:
+        await session.execute(stmt)
+        await session.commit()
+
 async def get_all_accounts(session_maker: async_sessionmaker[AsyncSession]) -> list[dict]:
     async with session_maker() as session:
         result = await session.execute(select(Account))
@@ -126,3 +135,4 @@ async def get_all_accounts(session_maker: async_sessionmaker[AsyncSession]) -> l
             }
             for acc in accounts
         ]
+

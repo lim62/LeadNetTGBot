@@ -1,20 +1,22 @@
 import asyncio
+import os
 
 from redis import Redis
+from pyrogram import Client
 from aiogram import Bot, F, Router
 from aiogram.types import (Message, CallbackQuery, InlineKeyboardMarkup, FSInputFile)
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from fluentogram import TranslatorRunner
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-from app.settings import add_client, send_code_client
+from app.settings import add_client
 from bot.states import AdminMainSG
-from bot.utils import format_database, process_users_mailing
+from bot.utils import format_database, process_users_mailing, format_accounts_db
 from bot.keyboards import (
     get_yes_no_kbd, get_accepted_kbd, get_declined_kbd,
     get_startpanel_kbd, get_back_kbd, get_accounts_kbd
 )
-from bot.database.requests import get_all_users
+from bot.database.requests import get_all_users, delete_account
 
 admin_router = Router()
 
@@ -31,15 +33,70 @@ async def cmd_admin_start(obj: Message | CallbackQuery, i18n: TranslatorRunner) 
 
 @admin_router.callback_query(F.data == 'accounts')
 @admin_router.callback_query(F.data == 'back_accounts')
-async def cmd_admin_accounts(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+async def cmd_admin_accounts(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
+    await call.message.delete()
+    await format_accounts_db(session_maker=session_maker)
+    for client in clients:
+        await rstorage.set(client.phone_number, 0)
+    await call.message.answer_document(
+        document=FSInputFile(path='bot/media/accounts_database.txt'),
+        caption=i18n.text.admin.accounts(),
+        reply_markup=await get_accounts_kbd(i18n=i18n, clients=clients, rstorage=rstorage)
+    )
+
+@admin_router.callback_query(F.data.startswith('+'))
+async def cmd_choose_acc(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
+    data: str = call.data
+    to_set: int = 1 if int(await rstorage.get(data)) == 0 else 0
+    await rstorage.set(data, to_set)
+    await call.message.edit_reply_markup(reply_markup=await get_accounts_kbd(i18n=i18n, clients=clients, rstorage=rstorage))
+
+@admin_router.callback_query(F.data == 'delete_accs')
+async def cmd_delete_accs(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
+    data: dict[str: bool] = {}
+    for client in clients:
+        data[client.phone_number] = True if int(await rstorage.get(client.phone_number)) == 1 else False
+    accounts = [client for client, to_delete in data.items() if to_delete]
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.delete_accs(accounts='\n'.join(accounts)),
+        reply_markup=get_yes_no_kbd(i18n=i18n, on_yes='sure_delete_accs', on_no='back_accounts')
+    )
+
+@admin_router.callback_query(F.data == 'sure_delete_accs')
+async def cmd_sure_delete_accs(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
+    for client in clients:
+        if int(await rstorage.get(client.phone_number)):
+            clients.remove(client)
+            await delete_account(session_maker=session_maker, phone=client.phone_number)
+            await client.stop()
+            await asyncio.sleep(0.5)
+            os.remove(path=f'sessions/{client.phone_number[1:]}.session')
     await call.message.edit_text(
-        text=i18n.text.admin.accounts(),
-        reply_markup=get_accounts_kbd(i18n=i18n)
+        text=i18n.text.admin.accounts_deleted(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
+    )
+
+@admin_router.callback_query(F.data == 'receive_code')
+async def cmd_receive_code(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
+    code: str
+    client: Client
+    for cli in clients:
+        if int(await rstorage.get(cli.phone_number)):
+            client = cli
+            break
+    async for message in client.get_chat_history(chat_id=777000, limit=1):
+        code = (message.text).split('.')[0].split(':')[-1][1:]
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.receive_code(phone=client.phone_number, code=code),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
 
 @admin_router.callback_query(F.data == 'add_accs')
 async def cmd_admin_add_accs(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
-    await call.message.edit_text(
+    await call.message.delete()
+    await call.message.answer(
         text=i18n.text.admin.enter_phone(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
@@ -165,34 +222,30 @@ async def cmd_admin_enter_proxy_password(msg: Message, i18n: TranslatorRunner, s
     await state.set_state(AdminMainSG.proxy_password)
 
 @admin_router.message(StateFilter(AdminMainSG.proxy_password))
-async def cmd_admin_enter_code(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis, session_maker: async_sessionmaker) -> None:
+async def cmd_admin_enter_code(msg: Message, i18n: TranslatorRunner, state: FSMContext, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
     to_start: dict = {}
     await msg.answer(
-        text=i18n.text.admin.enter_code(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
-    )
+            text=i18n.text.admin.enter_code(),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
+        )
     data: str = await rstorage.get(name=msg.from_user.id) + f'proxy_password:{msg.text}'
     to_start = {part.split(':')[0]: part.split(':')[1] for part in data.split(';')}
     try:
         await state.set_state(AdminMainSG.enter_code)
-        await add_client(data=to_start)
-    except Exception:
-        await state.set_state(AdminMainSG.fail_auth)
+        await rstorage.delete('code')
+        await add_client(data=to_start, rstorage=rstorage, session_maker=session_maker, clients=clients)
+    except Exception as e:
+        print(e)
+        await msg.answer(
+            text=i18n.text.admin.account_failed(),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
+        )
 
 @admin_router.message(StateFilter(AdminMainSG.enter_code))
 async def cmd_admin_account_done(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis, session_maker: async_sessionmaker) -> None:
-    await send_code_client(session_maker=session_maker, code=int(msg.text))
+    await rstorage.set('code', int(msg.text))
     await msg.answer(
         text=i18n.text.admin.account_added(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
-    )
-    await rstorage.delete(msg.from_user.id)
-    await state.clear()
-
-@admin_router.message(StateFilter(AdminMainSG.fail_auth))
-async def cmd_admin_fail_auth(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
-    await msg.answer(
-        text=i18n.text.admin.account_failed(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
     )
     await rstorage.delete(msg.from_user.id)

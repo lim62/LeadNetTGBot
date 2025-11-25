@@ -1,0 +1,2 @@
+Phone         | API_ID | API_Hash                         | App_Version | Device_Model | System_Version | Lang_Code | Password      | Proxy_Scheme | Proxy_Hostname | Proxy_Port | Proxy_Username | Proxy_Password
++573504208536 | 2040   | b18441a1ff607e10a989891a5462e627 | 6.2.4 x64   | FDZWJ-ELITE  | Windows 10     | en        | ssshhhiiittt! | socks5       | 154.219.22.231 | 63615      | XqmHeD3q       | 5A42XGkb      

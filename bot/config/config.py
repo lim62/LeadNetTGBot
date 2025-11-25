@@ -39,7 +39,7 @@ def load_config(path: str | None = None) -> Config:
         ),
         database=DatabaseCongig(
             DSN=env('POSTGRES_DSN'),
-            is_echo=True
+            is_echo=False
         ),
         redis=RedisConfig(
             HOST=env('REDIS_HOST'),
