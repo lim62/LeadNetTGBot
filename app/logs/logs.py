@@ -1,14 +1,6 @@
-from datetime import datetime
+from aiogram.types import Message
 
-from rich.console import Console
-
-console = Console()
-
-def get_time() -> str:
-    return datetime.now().strftime("%H:%M:%S")
-
-def print_logo() -> None:
-    logo = r"""
+"""
                                                         ██                                  ██                                                        
                                                       ███                                    ███                                                      
                                                     ████                                      ████                                                    
@@ -50,14 +42,13 @@ def print_logo() -> None:
                           ███         ███           ████████████    ███      ████   ███    ██████   ████             ███                              
                          ██████████   ███████████   ███      ████   ███████████     ███     █████   ███████████      ███                              
                           █████████    █████████    ██        ███   ████████        ███       ███    ██████████       ██                              
-    """
-    console.print(f'[bold cyan]{logo}[/bold cyan]')
+"""
 
-def print_info(msg: str) -> None:
-    console.print(f'[bold green][INFO] [{get_time()}][/bold green] {msg}')
+async def print_info(msg: Message, to_print: str) -> None:
+    await msg.answer(text=f'<b>[INFO]</b> <i>{to_print}</i>')
 
-def print_warn(msg: str) -> None:
-    console.print(f'[bold yellow][WARN] [{get_time()}][/bold yellow] {msg}')
+async def print_warn(msg: Message, to_print: str) -> None:
+    await msg.answer(text=f'<b>[WARN]</b> <i>{to_print}</i>')
 
-def print_error(msg: str) -> None:
-    console.print(f'[bold red][ERROR] [{get_time()}][/bold red] {msg}')
+async def print_error(msg: Message, to_print: str) -> None:
+    await msg.answer(text=f'<b>[ERROR]</b> <i>{to_print}</i>')

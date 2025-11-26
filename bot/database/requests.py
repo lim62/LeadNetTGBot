@@ -7,58 +7,63 @@ from bot.database.models.users import User
 
 async def upsert_user(
     session_maker: async_sessionmaker[AsyncSession],
-    telegram_id: int,
-    username: str = 'asd',
-    date: str = None,
-    stage: str = 'asd',
-    messages: int = 200,
-    offer: str = 'asd',
-    stories: str = 'asd',
-    from_ref: bool = False
+    telegram_id: int | None = None,
+    username: str | None = None,
+    status: str | None = None,
+    date: str | None = None,
+    stage: str | None = None,
+    messages: int | None = None,
+    have_prepared: bool = None
 ):
+    to_set: dict = {}
     if date is None:
         date = datetime.now().strftime("%H:%M %d.%m.%Y")
     stmt = (
         insert(User)
         .values(
-            dict(
-                telegram_id=telegram_id,
-                username=username,
-                date=date,
-                stage=stage,
-                messages=messages,
-                offer=offer,
-                stories=stories,
-                from_ref=from_ref
-            )
-        )
-        .on_conflict_do_update(
-            index_elements=[User.telegram_id],
-            set_=dict(
-                stage=stage
-            )
+            telegram_id=telegram_id,
+            username=username,
+            status=status,
+            date=date,
+            stage=stage,
+            messages=messages,
+            have_prepared=have_prepared,
         )
     )
+    if status and not username:
+        to_set['status'] = status
+    elif stage and not username:
+        to_set['stage'] = stage
+    elif messages and not username:
+        to_set['messages'] = messages
+    elif not username:
+        to_set['have_prepared'] = have_prepared
+    if to_set:
+        stmt = stmt.on_conflict_do_update(
+                index_elements=[User.telegram_id],
+                set_=to_set
+        )
+    else:
+        stmt = stmt.on_conflict_do_nothing()
     async with session_maker() as session:
         await session.execute(stmt)
         await session.commit()
     
-async def get_all_users(session_maker: async_sessionmaker[AsyncSession]) -> list[dict]:
+async def get_all_users(session_maker: async_sessionmaker[AsyncSession], telegram_id: int = None) -> list[dict]:
     async with session_maker() as session:
-        result = await session.execute(select(User))
+        result = await session.execute(select(User).where(User.telegram_id == telegram_id)) if telegram_id else await session.execute(select(User))
         users = result.scalars().all()
         return [
             {
-                "telegram_id": user.telegram_id,
-                "username": user.username,
-                "date": user.date,
-                "stage": user.stage,
-                "messages": user.messages,
-                "offer": user.offer,
-                "stories": user.stories,
-                "from_ref": user.from_ref,
+                "telegram_id": u.telegram_id,
+                "username": u.username,
+                "status": u.status,
+                "date": u.date,
+                "stage": u.stage,
+                "messages": u.messages,
+                "have_prepared": u.have_prepared,
             }
-            for user in users
+            for u in users
         ]
 
 async def upsert_account(

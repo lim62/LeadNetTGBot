@@ -21,12 +21,11 @@ def get_back_kbd(i18n: TranslatorRunner, callback_data: str) -> InlineKeyboardMa
 def get_pulse_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.pusk_prepare(), callback_data='pusk_prepare')],
-            [InlineKeyboardButton(text=i18n.btn.what_pulse(), callback_data='how_works_pulse')],
+            [InlineKeyboardButton(text=i18n.btn.pusk_prepare(), callback_data='how_works_pulse')],
             [InlineKeyboardButton(text=i18n.btn.constructor(), callback_data='constructor')],
-            [InlineKeyboardButton(text=i18n.btn.start_pulse(), callback_data='test_zalp')],
-            [InlineKeyboardButton(text=i18n.btn.tarifs(), callback_data='tarifs')],
-            [InlineKeyboardButton(text=i18n.btn.my_campaings(), callback_data='campaings')],
+            [InlineKeyboardButton(text=i18n.btn.start_pulse(), callback_data='start_pulse')],
+            [InlineKeyboardButton(text=i18n.btn.tarifs(), callback_data='before_tarifs')],
+            [InlineKeyboardButton(text=i18n.btn.profile(), callback_data='profile')],
             [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_start')]
         ]
     )
@@ -42,10 +41,19 @@ def get_workpulse_kbd(i18n: TranslatorRunner, up_text: str | None = None, down_t
     kbd.append([InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')])
     return InlineKeyboardMarkup(inline_keyboard=kbd)
 
+def give_chats_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=i18n.btn.previous(), callback_data='test_zalp')],
+            [InlineKeyboardButton(text=i18n.btn.upload(), callback_data='upload_chats')],
+            [InlineKeyboardButton(text=i18n.btn.contin(), callback_data='start_zalp')],
+            [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')]
+        ]
+    )
+
 def get_offer_kdb(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.previous(), callback_data='tg_chats')],
             [InlineKeyboardButton(text=i18n.btn.examples_offer(), callback_data='examples_offer')],
             [InlineKeyboardButton(text=i18n.btn.constructor(), callback_data='constructor')],
             [InlineKeyboardButton(text=i18n.btn.next(), callback_data='test_zalp')],
@@ -56,17 +64,9 @@ def get_offer_kdb(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
 def get_zalp_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text=i18n.btn.show_offer(), callback_data='show_offer')],
             [InlineKeyboardButton(text=i18n.btn.start_zalp(), callback_data='zalp_done')],
-            [InlineKeyboardButton(text=i18n.btn.edit_zalp(), callback_data='upload_chats')],
-            [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')]
-        ]
-    )
-
-def get_afterzalp_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.continue_prepare(), callback_data='continue_prepare')],
-            [InlineKeyboardButton(text=i18n.btn.tarifs(), callback_data='tarifs')],
+            [InlineKeyboardButton(text=i18n.btn.edit_zalp(), callback_data='back_give_chats')],
             [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')]
         ]
     )
@@ -74,9 +74,10 @@ def get_afterzalp_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
 def get_tarif_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.pulse_threedays(), callback_data='pulse_threedays')],
-            [InlineKeyboardButton(text=i18n.btn.pulse_tendays(), callback_data='pulse_tendays')],
-            [InlineKeyboardButton(text=i18n.btn.pulse_month(), callback_data='pulse_month')],
+            [InlineKeyboardButton(text=i18n.btn.week(), callback_data='pulse_week')],
+            [InlineKeyboardButton(text=i18n.btn.month(), callback_data='pulse_month')],
+            [InlineKeyboardButton(text=i18n.btn.month_plus(), callback_data='pulse_month_plus')],
+            [InlineKeyboardButton(text=i18n.btn.hundred_leads(), callback_data='pulse_hundred_leads')],
             [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')]
         ]
     )

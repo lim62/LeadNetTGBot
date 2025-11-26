@@ -21,7 +21,8 @@ def get_startpanel_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=i18n.btn.admin.accounts(), callback_data='accounts'), InlineKeyboardButton(text=i18n.btn.admin.mailing(), callback_data='mailing')],
-            [InlineKeyboardButton(text=i18n.btn.admin.to_menu(), callback_data='back_start'), InlineKeyboardButton(text=i18n.btn.admin.database(), callback_data='database')]
+            [InlineKeyboardButton(text=i18n.btn.admin.to_menu(), callback_data='back_start'), InlineKeyboardButton(text=i18n.btn.admin.database(), callback_data='database')],
+            [InlineKeyboardButton(text=i18n.btn.soft(), callback_data='soft')]
         ]
     )
 
@@ -38,4 +39,17 @@ async def get_accounts_kbd(i18n: TranslatorRunner, clients: list, rstorage: Redi
     keyboard.append([InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_admin_menu')])
     return InlineKeyboardMarkup(
         inline_keyboard=keyboard
+    )
+
+def get_soft_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=i18n.btn.parsing(), callback_data='parsing')],
+            [InlineKeyboardButton(text=i18n.btn.inviting(), callback_data='inviting')],
+            [InlineKeyboardButton(text=i18n.btn.groups(), callback_data='groups')],
+            [InlineKeyboardButton(text=i18n.btn.private(), callback_data='private')],
+            [InlineKeyboardButton(text=i18n.btn.leads(), callback_data='leads')],
+            [InlineKeyboardButton(text=i18n.btn.dustsos(), callback_data='dustsos')],
+            [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_admin_menu')]
+        ]
     )

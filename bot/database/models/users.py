@@ -6,10 +6,9 @@ class User(Base):
     __tablename__ = 'users'
 
     telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, primary_key=True)
-    username: Mapped[str] = mapped_column(String, nullable=False)
-    date: Mapped[str] = mapped_column(String, nullable=False)
-    stage: Mapped[str] = mapped_column(String, nullable=False)
-    messages: Mapped[int] = mapped_column(String, nullable=False)
-    offer: Mapped[str | None] = mapped_column(String, nullable=True)
-    stories: Mapped[str | None] = mapped_column(String, nullable=True)
-    from_ref: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    date: Mapped[str | None] = mapped_column(String, nullable=True)
+    stage: Mapped[str | None] = mapped_column(String, nullable=True)
+    messages: Mapped[int | None] = mapped_column(String, nullable=True)
+    have_prepared: Mapped[bool | None] = mapped_column(Boolean, nullable=True)

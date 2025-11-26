@@ -10,13 +10,15 @@ from aiogram.fsm.context import FSMContext
 from fluentogram import TranslatorRunner
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from app.settings import add_client
+from app.services.parser import proccess_async_parser
 from bot.states import AdminMainSG
 from bot.utils import format_database, process_users_mailing, format_accounts_db
 from bot.keyboards import (
     get_yes_no_kbd, get_accepted_kbd, get_declined_kbd,
-    get_startpanel_kbd, get_back_kbd, get_accounts_kbd
+    get_startpanel_kbd, get_back_kbd, get_accounts_kbd, get_soft_kbd
 )
 from bot.database.requests import get_all_users, delete_account
+from bot.config import Config
 
 admin_router = Router()
 
@@ -36,11 +38,10 @@ async def cmd_admin_start(obj: Message | CallbackQuery, i18n: TranslatorRunner) 
 async def cmd_admin_accounts(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     await format_accounts_db(session_maker=session_maker)
-    for client in clients:
-        await rstorage.set(client.phone_number, 0)
+    caption: str = i18n.text.admin.no_accounts() if len(clients) == 0 else i18n.text.admin.accounts()
     await call.message.answer_document(
         document=FSInputFile(path='bot/media/accounts_database.txt'),
-        caption=i18n.text.admin.accounts(),
+        caption=caption,
         reply_markup=await get_accounts_kbd(i18n=i18n, clients=clients, rstorage=rstorage)
     )
 
@@ -48,12 +49,14 @@ async def cmd_admin_accounts(call: CallbackQuery, i18n: TranslatorRunner, client
 async def cmd_choose_acc(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
     data: str = call.data
     to_set: int = 1 if int(await rstorage.get(data)) == 0 else 0
-    await rstorage.set(data, to_set)
     await call.message.edit_reply_markup(reply_markup=await get_accounts_kbd(i18n=i18n, clients=clients, rstorage=rstorage))
+    await rstorage.set(data, to_set)
 
 @admin_router.callback_query(F.data == 'delete_accs')
 async def cmd_delete_accs(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
     data: dict[str: bool] = {}
+    if not clients:
+        return
     for client in clients:
         data[client.phone_number] = True if int(await rstorage.get(client.phone_number)) == 1 else False
     accounts = [client for client, to_delete in data.items() if to_delete]
@@ -81,6 +84,8 @@ async def cmd_sure_delete_accs(call: CallbackQuery, i18n: TranslatorRunner, clie
 async def cmd_receive_code(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
     code: str
     client: Client
+    if not clients:
+        return
     for cli in clients:
         if int(await rstorage.get(cli.phone_number)):
             client = cli
@@ -224,20 +229,19 @@ async def cmd_admin_enter_proxy_password(msg: Message, i18n: TranslatorRunner, s
 @admin_router.message(StateFilter(AdminMainSG.proxy_password))
 async def cmd_admin_enter_code(msg: Message, i18n: TranslatorRunner, state: FSMContext, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
     to_start: dict = {}
-    await msg.answer(
-        text=i18n.text.admin.enter_code(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
-    )
     data: str = await rstorage.get(name=msg.from_user.id) + f'proxy_password:{msg.text}'
     to_start = {part.split(':')[0]: part.split(':')[1] for part in data.split(';')}
     try:
+        await msg.answer(
+            text=i18n.text.admin.enter_code(),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
+        )
         await state.set_state(AdminMainSG.enter_code)
         await rstorage.delete('code')
         await add_client(data=to_start, rstorage=rstorage, session_maker=session_maker, clients=clients)
     except Exception as e:
-        print(e)
         await msg.answer(
-            text=i18n.text.admin.account_failed(),
+            text=i18n.text.admin.account_failed(error=str(e)),
             reply_markup=get_back_kbd(i18n=i18n, callback_data='back_accounts')
         )
 
@@ -279,6 +283,93 @@ async def cmd_admin_database(call: CallbackQuery, i18n: TranslatorRunner, sessio
         caption=i18n.text.admin.database(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
     )
+
+@admin_router.callback_query(F.data == 'soft')
+async def cmd_admin_soft(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
+    for client in clients:
+        if int(await rstorage.get(client.phone_number)):
+            await call.message.edit_text(
+                text=i18n.text.admin.soft(),
+                reply_markup=get_soft_kbd(i18n=i18n)
+            )
+            return
+    await call.message.edit_text(
+        text=i18n.text.admin.choose_accs(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
+    )
+
+@admin_router.callback_query(F.data == 'parsing')
+async def cmd_admin_parsing(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+    await call.message.edit_text(
+        text=i18n.text.admin.parsing_link(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    await state.set_state(AdminMainSG.parsing_link)
+
+@admin_router.message(StateFilter(AdminMainSG.parsing_link))
+async def cmd_start_parsing(msg: Message, i18n: TranslatorRunner, clients: list[Client], state: FSMContext, bot: Bot, rstorage: Redis) -> None:
+    clients: list[Client] = []
+    for client in clients:
+        if int(await rstorage.get(client.phone_number)):
+            clients.append(client)
+    file_path = (await bot.get_file(file_id=msg.document.file_id)).file_path
+    file_content = await bot.download_file(file_path=file_path)
+    links = [link.strip() for link in (file_content.read().decode('utf-8')).split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in file_content.read().decode('utf-8') if link.startswith('t.me')]
+    msg = await msg.answer(text=i18n.text.admin.start_parsing())
+    asyncio.gather(proccess_async_parser(clients=clients, i18n=i18n, rstorage=rstorage, msg=msg, links=links))
+    await state.clear()
+
+@admin_router.callback_query(F.data == 'groups')
+async def cmd_admin_groups_delay(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+    await call.message.edit_text(
+        text=i18n.text.admin.groups_delay(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    await state.set_state(AdminMainSG.groups_delay)
+
+@admin_router.message(StateFilter(AdminMainSG.groups_delay))
+async def cmd_admin_groups_list(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+    await msg.answer(
+        text=i18n.text.admin.groups_list(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    await rstorage.set('delay', msg.text)
+    await state.set_state(AdminMainSG.groups_list)
+
+@admin_router.message(StateFilter(AdminMainSG.groups_list))
+async def cmd_admin_groups_offer(msg: Message, i18n: TranslatorRunner, bot: Bot, state: FSMContext) -> None:
+    if not msg.document:
+        await msg.answer(
+            text=i18n.text.admin.not_document(),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+        )
+        return
+    file_path = (await bot.get_file(file_id=msg.document.file_id)).file_path
+    file_content = await bot.download_file(file_path=file_path)
+    links = [link.strip() for link in (file_content.read().decode('utf-8')).split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in file_content.read().decode('utf-8') if link.startswith('t.me')]
+    with open(('app/database/groups/links.txt'), 'w') as file:
+        file.write('\n'.join(links))
+    await msg.answer(
+        text=i18n.text.admin.groups_offer(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    await state.set_state(AdminMainSG.groups_offer)
+
+@admin_router.message(StateFilter(AdminMainSG.groups_offer))
+async def cmd_admin_groups_stories(msg: Message, i18n: TranslatorRunner, state: FSMContext, config: Config, bot: Bot, rstorage: Redis, clients: Client) -> None:
+    await msg.answer(
+        text=i18n.text.admin.groups_stories(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    await state.set_state(AdminMainSG.groups_stories)
+    for client in clients:
+        client: Client
+        if int(await rstorage.get(client.phone_number)):
+            await client.send_message(chat_id=config.bot.BOT_ID, text='/start')
+            await asyncio.sleep(0.2)
+            msg = await bot.copy_message(chat_id=client.me.id, from_chat_id=msg.from_user.id, message_id=msg.message_id)
+            await asyncio.sleep(0.2)
+            await client.copy_message(chat_id='me', from_chat_id=config.bot.BOT_ID, message_id=msg.message_id)
 
 @admin_router.callback_query(F.data.startswith('decline'))
 @admin_router.callback_query(F.data.startswith('call'))

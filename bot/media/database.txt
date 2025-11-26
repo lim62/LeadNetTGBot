@@ -1,2 +1,3 @@
 ID         | Username   | Date             | Stage | Messages | Offer     | Stories | FromRef
-8243174411 | @mrRobot40 | 19:12 24.11.2025 | menu  | 200      | Something | Som     | False  
+8243174411 | @mrRobot40 | 19:12 24.11.2025 | pulse | 200      | Something | Som     | False  
+8501687555 | @c0pyright | 20:16 25.11.2025 | menu  | 200      | Something | Som     | False  

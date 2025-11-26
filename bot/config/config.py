@@ -5,6 +5,7 @@ class BotConfig(BaseModel):
     TOKEN: SecretStr
     ADMINS_IDS: list[int]
     ADMIN_CHAT: int
+    BOT_ID: str
 
 class LoggingConfig(BaseModel):
     LEVEL: str
@@ -17,6 +18,8 @@ class DatabaseCongig(BaseModel):
 class RedisConfig(BaseModel):
     HOST: str
     PORT: int
+    DB1: int
+    DB2: int
 
 class Config(BaseModel):
     bot: BotConfig
@@ -31,7 +34,8 @@ def load_config(path: str | None = None) -> Config:
         bot=BotConfig(
             TOKEN=env('TOKEN'),
             ADMINS_IDS=env.list('ADMINS_IDS'),
-            ADMIN_CHAT=env.int('ADMIN_CHAT')
+            ADMIN_CHAT=env.int('ADMIN_CHAT'),
+            BOT_ID=env('BOT_ID')
         ),
         log=LoggingConfig(
             LEVEL=env('LOGGING_LEVEL'),
@@ -43,6 +47,8 @@ def load_config(path: str | None = None) -> Config:
         ),
         redis=RedisConfig(
             HOST=env('REDIS_HOST'),
-            PORT=env.int('REDIS_PORT')
+            PORT=env.int('REDIS_PORT'),
+            DB1=env.int('REDIS_DB1'),
+            DB2=env.int('REDIS_DB2')
         )
     )

@@ -1,1 +1,1 @@
-from bot.logs.logs import *
+from app.logs.logs import *

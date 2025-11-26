@@ -33,6 +33,8 @@ async def start_clients(session_maker: async_sessionmaker, rstorage: Redis) -> N
     ]
     for client in clients:
         asyncio.gather(schedule_starting(client=client, rstorage=rstorage))
+    for client in clients:
+        await rstorage.set(client.phone_number, 0)
     return clients
     
 async def schedule_starting(client: Client, rstorage: Redis) -> None:
@@ -79,6 +81,7 @@ async def add_client(data: str, rstorage: Redis, session_maker: async_sessionmak
             proxy_password=data['proxy_password']
         )
         clients.append(client)
+        await rstorage.set(client.phone_number, 0)
     except Exception as e:
         print(e)
         raise e()
