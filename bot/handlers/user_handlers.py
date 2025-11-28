@@ -2,6 +2,7 @@ import asyncio
 import os
 
 from redis import Redis
+from pyrogram import Client
 from aiogram import Bot, Router, F
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import CommandStart, StateFilter
@@ -17,25 +18,41 @@ from bot.keyboards import (
     get_success_kbd, get_standard_kbd, get_time_kbd,
     get_leadpanel_kbd, get_pulse_kbd, get_tarif_kbd,
     get_workpulse_kbd, get_offer_kdb, get_zalp_kbd,
-    give_chats_kbd
+    give_chats_kbd, get_end_kbd
 )
 from bot.utils import change_photo
+from app.services.groups import process_async_groups
 
 user_router = Router()
 
 @user_router.message(CommandStart())
 @user_router.callback_query(F.data == 'back_start')
 async def cmd_start(obj: Message | CallbackQuery, i18n: TranslatorRunner, state: FSMContext, session_maker: async_sessionmaker) -> None:
+    from_ref: bool = False
     msg = obj if isinstance(obj, Message) else obj.message
     first_name: str = msg.from_user.first_name
     if isinstance(obj, Message):
-        msg = await msg.answer(text=i18n.text.user.start_stage1())
+        args = msg.text.split()
+        payload = args[1] if len(args) > 1 else None
+        user = await get_all_users(session_maker=session_maker, telegram_id=obj.from_user.id)
+        if not user and payload:
+            msg = await msg.answer(text=i18n.text.user.start_stage1_menu())
+            await asyncio.sleep(2)
+            referal = await get_all_users(session_maker=session_maker, telegram_id=int(payload))
+            await upsert_user(
+                session_maker=session_maker,
+                telegram_id=int(payload),
+                credit=int(referal[0]['credit']) + 5
+            )
+            from_ref = True
+        else:   
+            msg = await msg.answer(text=i18n.text.user.start_stage1())
+            await asyncio.sleep(2)
+        await msg.delete()
+        msg = await msg.answer(text=i18n.text.user.start_stage2())
         await asyncio.sleep(2)
         await msg.delete()
-        msg = await msg.edit_text(text=i18n.text.user.start_stage2())
-        await asyncio.sleep(2)
-        await msg.delete()
-        msg = await msg.edit_text(text=i18n.text.user.start_stage3())
+        msg = await msg.answer(text=i18n.text.user.start_stage3())
         await asyncio.sleep(2)
     await msg.delete()
     await msg.answer_video(
@@ -51,7 +68,9 @@ async def cmd_start(obj: Message | CallbackQuery, i18n: TranslatorRunner, state:
         status='user',
         stage='menu',
         messages=30,
-        have_prepared=False
+        credit=5,
+        have_prepared=False,
+        from_ref=from_ref
     )
 
 @user_router.callback_query(F.data == 'pulse')
@@ -129,7 +148,7 @@ async def cmd_offer_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_m
 async def cmd_examples_offer(call: CallbackQuery, i18n: TranslatorRunner) -> None:
     await call.message.delete()
     await call.message.answer(
-        text=i18n.text.user.examples_offer(),
+        text=i18n.text.user.need_status(name=call.from_user.first_name),
         reply_markup=get_workpulse_kbd(i18n=i18n, up='offer_pulse', have_down=False)
     )
 
@@ -152,7 +171,7 @@ async def cmd_test_zalp(call: CallbackQuery, i18n: TranslatorRunner, bot: Bot, s
     await call.message.answer_photo(
         photo=FSInputFile(path=f'bot/media/avatars/pusk_prepare{user_id}.png'),
         caption=i18n.text.user.test_zalp(name=call.from_user.first_name),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='offer_pulse', down='give_chats', down_text=i18n.btn.zalp())
+        reply_markup=get_workpulse_kbd(i18n=i18n, up='offer_pulse', down='give_chats', down_text=i18n.btn.yes_go(), have_back=False)
     )
     os.remove(f"bot/media/avatars/{user_id}.jpg")
     os.remove(f'bot/media/avatars/pusk_prepare{user_id}.png')
@@ -173,7 +192,7 @@ async def cmd_give_chats(call: CallbackQuery, i18n: TranslatorRunner, session_ma
     await msg.delete()
     await msg.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/33',
-        caption=i18n.text.user.give_chats(name=call.from_user.first_name),
+        caption=i18n.text.user.give_chats(name=call.from_user.first_name, ref_link=f'https://t.me/Lead_Net_Bot?start={call.from_user.id}'),
         reply_markup=give_chats_kbd(i18n=i18n)
     )
     await upsert_user(
@@ -183,7 +202,7 @@ async def cmd_give_chats(call: CallbackQuery, i18n: TranslatorRunner, session_ma
     )
 
 @user_router.callback_query(F.data == 'upload_chats')
-async def cmd_what_stage55(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext, session_maker: async_sessionmaker) -> None:
+async def cmd_upload_chats(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     await call.message.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/34',
@@ -200,11 +219,27 @@ async def cmd_what_stage55(call: CallbackQuery, i18n: TranslatorRunner, state: F
 @user_router.message(StateFilter(UserMainSG.load_chats))
 @user_router.callback_query(F.data == 'start_zalp')
 async def cmd_start_zalp(obj: Message | CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+    links: list[str] = []
     msg = obj if isinstance(obj, Message) else obj.message
     if not isinstance(obj, Message):
         await obj.message.delete()
+    else:
+        links = [link.strip() for link in msg.text.split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in msg.text.split('\n') if link.startswith('t.me')]
+        if not links:
+            await msg.answer(
+                text=i18n.text.user.no_links()
+            )
+            return
+        elif len(links) > 10:
+            await msg.answer(
+                text=i18n.text.user.much_links()
+            )
+            return
+    links += ["https://t.me/salespractice","https://t.me/toppiar_chat","https://t.me/spb_cs","https://t.me/mskcpro","https://t.me/clubbusinessist","https://t.me/mary_vvvverh","https://t.me/+fvl0RYvNDh9jN2Ri","https://t.me/biznesfamily_n1","https://t.me/startupschoolsk","https://t.me/tclubnetwork","https://t.me/kosmetologytop","https://t.me/+R_KxUQG5hYo5ZjAy","https://t.me/filigrad_all","https://t.me/+OY1QSBoSt_NhMTJi","https://t.me/+hVFpPc7sFXA2MTQy","https://t.me/+1XT7FX00zGlmNjE0","http://t.me/+RtHbcvNmgfYwZWI6","https://t.me/+20m4ulAwHQVkMmQy","https://t.me/+YSepHSsKfN82Yzk6","https://t.me/+qd5P1QZJnVVjOGIy"]
+    with open(('app/database/groups/links.txt'), 'w') as file:
+        file.write('\n'.join(links))
     await msg.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
+        photo='https://t.me/sksjkdksnsjdjdndksm/41',
         caption=i18n.text.user.start_zalp(name=obj.from_user.first_name),
         reply_markup=get_zalp_kbd(i18n=i18n)
     )
@@ -212,15 +247,15 @@ async def cmd_start_zalp(obj: Message | CallbackQuery, i18n: TranslatorRunner, s
         session_maker=session_maker,
         telegram_id=obj.from_user.id,
         stage='pulse'
-    )
+    )\
 
 @user_router.callback_query(F.data == 'show_offer')
 async def cmd_show_offer(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
-    await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.show_offer(name=call.from_user.first_name, username=call.from_user.username),
-        reply_markup=get_workpulse_kbd(i18n=i18n, up='start_zalp', down='zalp_done')
+    await call.message.answer_video(
+        video='https://t.me/sksjkdksnsjdjdndksm/42',
+        caption=i18n.text.user.show_offer(name=call.from_user.first_name),
+        reply_markup=get_workpulse_kbd(i18n=i18n, up='start_zalp', down='starting')
     )
     await upsert_user(
         session_maker=session_maker,
@@ -228,23 +263,20 @@ async def cmd_show_offer(call: CallbackQuery, i18n: TranslatorRunner, session_ma
         stage='show_offer'
     )
 
+@user_router.callback_query(F.data == 'starting')
+async def cmd_starting(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
+    for client in clients:
+        client: Client
+        await client.send_video(chat_id='me', video='https://t.me/sksjkdksnsjdjdndksm/42', caption=f'Ребят, а кто тестировал уже бота от LeadNet ?\n\nУ меня сейчас вот так Лидов дал и баланс закончился… \n\nКто может зайти в Pulse по моей рефке? Это бесплатно, а мне дадут кредиты на которые я смогу запустить трафик) если что, и вам тоже запущу)\n\nhttps://t.me/Lead_Net_Bot?start={call.from_user.id}')
+    asyncio.ensure_future(process_async_groups(msg=call.message, i18n=i18n, clients=clients, MESSAGE_DELAY=1, rstorage=rstorage))
+
 @user_router.callback_query(F.data == 'zalp_done')
 @user_router.callback_query(F.data == 'back_zalp_done')
-async def cmd_zalp_done(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+async def cmd_zalp_done(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
     msg = call.message
-    if call.data == 'zalp_done':
-        await call.message.delete()
-        msg = await call.message.answer(text=i18n.text.user.flow())
-        await asyncio.sleep(2)
-        await msg.delete()
-        msg = await msg.answer(text=i18n.text.user.pulse_going())
-        await asyncio.sleep(2)
-        await msg.delete()
-        msg = await msg.answer(text=i18n.text.user.pulse_live())
-        await asyncio.sleep(2)
     await msg.delete()
     await msg.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
+        photo='https://t.me/sksjkdksnsjdjdndksm/36',
         caption=i18n.text.user.zalp_done(name=call.from_user.first_name),
         reply_markup=get_workpulse_kbd(i18n=i18n, down='continue_prepare', down_text=i18n.btn.continue_prepare(), have_up=False)
     )
@@ -258,7 +290,7 @@ async def cmd_zalp_done(call: CallbackQuery, i18n: TranslatorRunner, session_mak
 async def cmd_continue_prepare(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
+        photo='https://t.me/sksjkdksnsjdjdndksm/37',
         caption=i18n.text.user.after_impulse(name=call.from_user.first_name),
         reply_markup=get_workpulse_kbd(i18n=i18n, down='show_nativ', up='back_zalp_done')
     )
@@ -272,8 +304,8 @@ async def cmd_continue_prepare(call: CallbackQuery, i18n: TranslatorRunner, sess
 async def cmd_show_nativ(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.show_nativ(),
+        photo='https://t.me/sksjkdksnsjdjdndksm/38',
+        caption=i18n.text.user.show_nativ(name=call.from_user.first_name),
         reply_markup=get_workpulse_kbd(i18n=i18n, down='nativ_sent', up='continue_prepare', down_text=i18n.btn.zalp())
     )
     await upsert_user(
@@ -286,7 +318,7 @@ async def cmd_show_nativ(call: CallbackQuery, i18n: TranslatorRunner, session_ma
 async def cmd_nativ_sent(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
+        photo='https://t.me/sksjkdksnsjdjdndksm/40',
         caption=i18n.text.user.nativ_sent(name=call.from_user.first_name),
         reply_markup=get_workpulse_kbd(i18n=i18n, down='try_stories', have_up=False)
     )
@@ -300,70 +332,14 @@ async def cmd_nativ_sent(call: CallbackQuery, i18n: TranslatorRunner, session_ma
 async def cmd_try_stories(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
     await call.message.delete()
     await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
+        photo='https://t.me/sksjkdksnsjdjdndksm/39',
         caption=i18n.text.user.try_stories(name=call.from_user.first_name),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='send_stories', up='nativ_sent', down_text=i18n.btn.zalp())
+        reply_markup=get_end_kbd(i18n=i18n)
     )
     await upsert_user(
         session_maker=session_maker,
         telegram_id=call.from_user.id,
         stage='try_stories'
-    )
-
-@user_router.callback_query(F.data == 'send_stories')
-async def cmd_send_stories(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    await call.message.delete()
-    await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.send_stories(name=call.from_user.first_name),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='tech_center', have_up=False, down_text=i18n.btn.continue_prepare())
-    )
-    await upsert_user(
-        session_maker=session_maker,
-        telegram_id=call.from_user.id,
-        stage='stories_send'
-    )
-
-@user_router.callback_query(F.data == 'tech_center')
-async def cmd_tech_center(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    await call.message.delete()
-    await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.tech_center(name=call.from_user.first_name),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='what_system_do', up='send_stories', down_text=i18n.btn.what_system_do())
-    )
-    await upsert_user(
-        session_maker=session_maker,
-        telegram_id=call.from_user.id,
-        stage='tech_center'
-    )
-
-@user_router.callback_query(F.data == 'what_system_do')
-async def cmd_what_system_do(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    await call.message.delete()
-    await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.what_system_do(name=call.from_user.first_name),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='end_pusk_prepare', up='tech_center')
-    )
-    await upsert_user(
-        session_maker=session_maker,
-        telegram_id=call.from_user.id,
-        stage='what_system_do'
-    )
-
-@user_router.callback_query(F.data == 'end_pusk_prepare')
-async def cmd_end_pusk_prepare(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    await call.message.delete()
-    await call.message.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/28',
-        caption=i18n.text.user.end_pusk_prepare(name=call.from_user.first_name),
-        reply_markup=get_workpulse_kbd(i18n=i18n, down='before_tarifs', up='back_pulse', down_text=i18n.btn.tarifs(), up_text=i18n.btn.pulse_menu())
-    )
-    await upsert_user(
-        session_maker=session_maker,
-        telegram_id=call.from_user.id,
-        stage='stories_send'
     )
     await upsert_user(
         session_maker=session_maker,
@@ -446,7 +422,7 @@ async def cmd_threedays(call: CallbackQuery, i18n: TranslatorRunner) -> None:
     await call.message.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/28',
         caption=i18n.text.user.pulse_week(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs')
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs', text=i18n.btn.true_back())
     )
 
 @user_router.callback_query(F.data == 'pulse_month')
@@ -455,7 +431,7 @@ async def cmd_pulse_month(call: CallbackQuery, i18n: TranslatorRunner) -> None:
     await call.message.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/28',
         caption=i18n.text.user.pulse_month(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs')
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs', text=i18n.btn.true_back())
     )
 
 @user_router.callback_query(F.data == 'pulse_month_plus')
@@ -464,7 +440,7 @@ async def cmd_pulse_month_plus(call: CallbackQuery, i18n: TranslatorRunner) -> N
     await call.message.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/28',
         caption=i18n.text.user.pulse_month_plus(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs')
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs', text=i18n.btn.true_back())
     )
 
 @user_router.callback_query(F.data == 'pulse_hundred_leads')
@@ -473,21 +449,28 @@ async def cmd_pulse_hundred_leads(call: CallbackQuery, i18n: TranslatorRunner) -
     await call.message.answer_photo(
         photo='https://t.me/sksjkdksnsjdjdndksm/28',
         caption=i18n.text.user.pulse_hundred_leads(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs')
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_tarifs', text=i18n.btn.true_back())
     )
 
 @user_router.callback_query(F.data == 'profile')
 @user_router.callback_query(F.data == 'back_profile')
 async def cmd_profile(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
-    status = (await get_all_users(session_maker=session_maker, telegram_id=call.from_user.id))[0]['status']
-    if status != 'user':
-        pass
-    else:
-        await call.message.delete()
-        await call.message.answer(
-            text=i18n.text.user.need_status(name=call.from_user.first_name),
-            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_pulse')
-        )
+    data: dict = (await get_all_users(session_maker=session_maker, telegram_id=call.from_user.id))[0]
+    status = data['status']
+    credit = data['credit']
+    credit = int(credit) if credit else 0
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.user.profile(
+            name=call.from_user.first_name,
+            status='💸 PAID' if status == 'paid' else '🫰 USER',
+            expired='0',
+            credit=credit,
+            messages='0',
+            ref_link=f'https://t.me/Lead_Net_Bot?start={call.from_user.id}'
+        ),
+        reply_markup=get_workpulse_kbd(i18n=i18n, have_up=False, down='start_pulse', down_text=i18n.btn.skyrocket())
+    )
     await upsert_user(
         session_maker=session_maker,
         telegram_id=call.from_user.id,
@@ -537,8 +520,8 @@ async def cmd_fastlane(call: CallbackQuery, i18n: TranslatorRunner, state: FSMCo
     else:
         msg = call.message
     await msg.delete()
-    await msg.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/12',
+    await msg.answer_video(
+        video='https://t.me/sksjkdksnsjdjdndksm/12',
         caption=i18n.text.user.fastlane(name=call.from_user.first_name),
         reply_markup=get_fastlane_kbd(i18n=i18n)
     )
@@ -711,8 +694,8 @@ async def input_economics(obj: Message | CallbackQuery, i18n: TranslatorRunner, 
         msg = await msg.answer(text=i18n.text.user.time_stage1())
         await asyncio.sleep(2)
     await msg.delete()
-    await msg.answer_photo(
-        photo='https://t.me/sksjkdksnsjdjdndksm/19',
+    await msg.answer_video(
+        video='https://t.me/sksjkdksnsjdjdndksm/19',
         caption=i18n.text.user.time(),
         reply_markup=get_time_kbd(i18n=i18n)
     )

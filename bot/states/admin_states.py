@@ -3,6 +3,7 @@ from aiogram.fsm.state import State, StatesGroup
 class AdminMainSG(StatesGroup):
     verifying = State()
     mailing = State()
+    change_status = State()
     phone = State()
     api_id = State()
     api_hash = State()
@@ -24,7 +25,6 @@ class AdminMainSG(StatesGroup):
     groups_delay = State()
     groups_list = State()
     groups_offer = State()
-    groups_stories = State()
     private_delay = State()
     private_list = State()
     private_offer = State()

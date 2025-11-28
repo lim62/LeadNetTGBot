@@ -11,13 +11,15 @@ from fluentogram import TranslatorRunner
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from app.settings import add_client
 from app.services.parser import proccess_async_parser
+from app.services.groups import process_async_groups
 from bot.states import AdminMainSG
 from bot.utils import format_database, process_users_mailing, format_accounts_db
 from bot.keyboards import (
     get_yes_no_kbd, get_accepted_kbd, get_declined_kbd,
-    get_startpanel_kbd, get_back_kbd, get_accounts_kbd, get_soft_kbd
+    get_startpanel_kbd, get_back_kbd, get_accounts_kbd, get_soft_kbd,
+    get_change_status_kbd
 )
-from bot.database.requests import get_all_users, delete_account
+from bot.database.requests import get_all_users, upsert_user, delete_account
 from bot.config import Config
 
 admin_router = Router()
@@ -49,8 +51,8 @@ async def cmd_admin_accounts(call: CallbackQuery, i18n: TranslatorRunner, client
 async def cmd_choose_acc(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
     data: str = call.data
     to_set: int = 1 if int(await rstorage.get(data)) == 0 else 0
-    await call.message.edit_reply_markup(reply_markup=await get_accounts_kbd(i18n=i18n, clients=clients, rstorage=rstorage))
     await rstorage.set(data, to_set)
+    await call.message.edit_reply_markup(reply_markup=await get_accounts_kbd(i18n=i18n, clients=clients, rstorage=rstorage))
 
 @admin_router.callback_query(F.data == 'delete_accs')
 async def cmd_delete_accs(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
@@ -284,6 +286,40 @@ async def cmd_admin_database(call: CallbackQuery, i18n: TranslatorRunner, sessio
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
     )
 
+@admin_router.callback_query(F.data == 'change_status')
+async def cmd_change_status(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.change_status(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
+    )
+    await state.set_state(AdminMainSG.change_status)
+
+@admin_router.message(StateFilter(AdminMainSG.change_status))
+async def cmd_process_status(msg: Message, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+    await msg.answer(
+        text=i18n.text.admin.choose_status(),
+        reply_markup=get_change_status_kbd(i18n=i18n)
+    )
+    await rstorage.set('status_change', msg.text)
+    await state.clear()
+
+@admin_router.callback_query(F.data.startswith('status_'))
+async def cmd_end_changing_status(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker, rstorage: Redis) -> None:
+    status: str = call.data.split('_')[-1]
+    await call.message.delete()
+    try:
+        await upsert_user(session_maker=session_maker, telegram_id=int(await rstorage.get('status_change')), status=status)
+        await call.message.answer(
+            text=i18n.text.admin.status_done(),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
+        )
+    except Exception as e:
+        await call.message.answer(
+            text=i18n.text.admin.status_error(error=str(e)),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
+        )
+
 @admin_router.callback_query(F.data == 'soft')
 async def cmd_admin_soft(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
     for client in clients:
@@ -357,19 +393,30 @@ async def cmd_admin_groups_offer(msg: Message, i18n: TranslatorRunner, bot: Bot,
 
 @admin_router.message(StateFilter(AdminMainSG.groups_offer))
 async def cmd_admin_groups_stories(msg: Message, i18n: TranslatorRunner, state: FSMContext, config: Config, bot: Bot, rstorage: Redis, clients: Client) -> None:
-    await msg.answer(
-        text=i18n.text.admin.groups_stories(),
-        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
-    )
-    await state.set_state(AdminMainSG.groups_stories)
+    await state.clear()
     for client in clients:
         client: Client
-        if int(await rstorage.get(client.phone_number)):
-            await client.send_message(chat_id=config.bot.BOT_ID, text='/start')
-            await asyncio.sleep(0.2)
-            msg = await bot.copy_message(chat_id=client.me.id, from_chat_id=msg.from_user.id, message_id=msg.message_id)
-            await asyncio.sleep(0.2)
-            await client.copy_message(chat_id='me', from_chat_id=config.bot.BOT_ID, message_id=msg.message_id)
+        value = await rstorage.get(client.phone_number)
+        if value and int(value):
+            if msg.media_group_id:
+                await msg.answer(
+                    text=i18n.text.admin.no_media_groups(),
+                    reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+                )
+                return
+            elif getattr(msg, "photo", None):
+                media = msg.photo.file_id
+                await client.send_photo(chat_id='me', photo=media, caption=msg.caption, caption_entities=msg.caption_entities)
+            elif getattr(msg, "video", None):
+                media = msg.video.file_id
+                await client.send_video(chat_id='me', video=media, caption=msg.caption, caption_entities=msg.caption_entities)
+            else:
+                await client.send_message(chat_id='me', text=msg.text, entities=msg.entities)
+            await msg.answer(
+                text=i18n.text.admin.start_groups(),
+                reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+            )
+            asyncio.gather(process_async_groups())
 
 @admin_router.callback_query(F.data.startswith('decline'))
 @admin_router.callback_query(F.data.startswith('call'))

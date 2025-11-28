@@ -1,11 +1,15 @@
 import asyncio
 
 from random import choice
+from typing import TYPE_CHECKING
 from pyrogram import Client
 from pyrogram.types import InputMediaPhoto, InputMediaVideo
 from pyrogram.enums.parse_mode import ParseMode
 
-async def account_waiting(client: Client, wait: int, where: list) -> None:
+if (TYPE_CHECKING):
+    from app.qt_windows.bot_window import BotWindow
+
+async def account_waiting(self: 'BotWindow', client: Client, wait: int, where: list) -> None:
     await asyncio.sleep(wait)
     where.append(client)
 

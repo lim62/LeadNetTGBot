@@ -38,8 +38,8 @@ async def main() -> None:
         await connection.run_sync(Base.metadata.create_all)
     session_maker = async_sessionmaker(engine, expire_on_commit=False)
     rstorage = get_rstorage(config)
-    # clients: list[Client] = await start_clients(session_maker=session_maker, rstorage=rstorage)
-    clients: list = []
+    clients: list[Client] = await start_clients(session_maker=session_maker, rstorage=rstorage)
+    # clients: list = []
     dp = Dispatcher(storage=await load_storage(config), _translator_hub=translator_hub)
     dp.include_routers(admin_router, user_router)
     dp.update.middleware(DataMiddleware(config=config, bot=bot, clients=clients, rstorage=rstorage, session_maker=session_maker))

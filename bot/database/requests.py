@@ -13,7 +13,9 @@ async def upsert_user(
     date: str | None = None,
     stage: str | None = None,
     messages: int | None = None,
-    have_prepared: bool = None
+    credit: int | None = None,
+    have_prepared: bool | None = None,
+    from_ref: bool | None = None
 ):
     to_set: dict = {}
     if date is None:
@@ -27,7 +29,9 @@ async def upsert_user(
             date=date,
             stage=stage,
             messages=messages,
+            credit=credit,
             have_prepared=have_prepared,
+            from_ref=from_ref
         )
     )
     if status and not username:
@@ -36,12 +40,14 @@ async def upsert_user(
         to_set['stage'] = stage
     elif messages and not username:
         to_set['messages'] = messages
+    elif credit and not username:
+        to_set['credit'] = credit
     elif not username:
         to_set['have_prepared'] = have_prepared
     if to_set:
         stmt = stmt.on_conflict_do_update(
-                index_elements=[User.telegram_id],
-                set_=to_set
+            index_elements=[User.telegram_id],
+            set_=to_set
         )
     else:
         stmt = stmt.on_conflict_do_nothing()
@@ -61,7 +67,9 @@ async def get_all_users(session_maker: async_sessionmaker[AsyncSession], telegra
                 "date": u.date,
                 "stage": u.stage,
                 "messages": u.messages,
+                'credit': u.credit,
                 "have_prepared": u.have_prepared,
+                'from_ref': u.from_ref
             }
             for u in users
         ]
