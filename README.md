@@ -5,7 +5,8 @@
 1) Create .env and fullfill it
 2) Create .venv and intall all the dependencies from requirements.txt
 3) Run redis-server
-4) Run main.py
+4) Run PostrgeSQL
+5) Run main.py
 
 *Description*
 

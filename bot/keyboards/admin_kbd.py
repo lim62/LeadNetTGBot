@@ -45,7 +45,10 @@ def get_change_status_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=i18n.btn.status_user(), callback_data='status_user')],
-            [InlineKeyboardButton(text=i18n.btn.status_paid(), callback_data='status_paid')],
+            [InlineKeyboardButton(text=i18n.btn.status_testum(), callback_data='status_testum')],
+            [InlineKeyboardButton(text=i18n.btn.status_base(), callback_data='status_base')],
+            [InlineKeyboardButton(text=i18n.btn.status_pro(), callback_data='status_pro')],
+            [InlineKeyboardButton(text=i18n.btn.status_ultra(), callback_data='status_ultra')],
             [InlineKeyboardButton(text=i18n.btn.true_back(), callback_data='change_status')]
         ]
     )

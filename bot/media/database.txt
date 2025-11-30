@@ -1,28 +1,46 @@
-ID         | Username             | Status | Date             | Stage         | Messages | Credit | Prepared | FromRef
-350314587  | @ivanchenko_inga     | user   | 12:27 28.11.2025 | was sent      | 30       | 5      | False    | True   
-8009445791 | @None                | user   | 16:17 28.11.2025 | pulse         | 30       | 5      | False    | False  
-227307134  | @boobsmummy          | user   | 16:26 28.11.2025 | pulse         | 30       | 5      | False    | False  
-6414170876 | @promanager7         | user   | 13:23 28.11.2025 | send_standard | 30       | 5      | False    | False  
-7625478313 | @vikki_vorobyova     | user   | 12:32 28.11.2025 | neurohub      | 30       | 5      | False    | True   
-640678846  | @lebedevdsn          | user   | 12:39 28.11.2025 | traffic       | 30       | 5      | False    | False  
-5551133953 | @Iamnikol            | user   | 11:03 28.11.2025 | fastlane      | 30       | 5      | False    | True   
-359444942  | @Lopatata            | user   | 10:59 28.11.2025 | enter_product | 30       | 15     | True     | False  
-1767480213 | @svobodnaja_ya       | user   | 11:12 28.11.2025 | verification  | 30       | 5      | False    | True   
-141591969  | @sokolovmo           | user   | 12:33 28.11.2025 | delta         | 30       | 5      | False    | True   
-7860688114 | None                 | None   | 12:42 28.11.2025 | send_fastlane | None     | None   | None     | None   
-355873685  | @alenka_honey        | user   | 18:35 28.11.2025 | pulse         | 30       | 5      | False    | False  
-563372905  | @dorohovmark         | user   | 12:45 28.11.2025 | menu          | 30       | 5      | False    | True   
-471345280  | @Lyama               | user   | 12:27 28.11.2025 | menu          | 30       | 5      | False    | True   
-1114066533 | @Anr432              | user   | 13:09 28.11.2025 | traffic       | 30       | 5      | False    | False  
-8501687555 | @c1pyright           | user   | 17:33 28.11.2025 | menu          | 30       | 5      | False    | False  
-7432019668 | @Nikitaa_SVR         | user   | 13:25 28.11.2025 | enter_product | 30       | 5      | False    | True   
-5415282605 | @aficionata          | user   | 12:40 28.11.2025 | was sent      | 30       | 5      | False    | True   
-638251652  | @bugaev_pavel        | user   | 18:10 28.11.2025 | pulse         | 30       | 5      | False    | False  
-6064307479 | @Joker_Asist_LeadNet | user   | 13:08 28.11.2025 | pulse         | 30       | 20     | True     | False  
-1662503671 | @maskkkk2            | user   | 13:32 28.11.2025 | enter_product | 30       | 5      | False    | True   
-8234278566 | @david_miami7        | user   | 20:09 28.11.2025 | pulse         | 30       | 5      | False    | False  
-783349017  | None                 | None   | 10:43 28.11.2025 | standard      | None     | None   | True     | None   
-7901539776 | @Oksanateamlid       | user   | 09:49 28.11.2025 | pulse         | 30       | 35     | True     | False  
-8243174411 | None                 | paid   | 07:30 28.11.2025 | pulse         | None     | None   | None     | None   
-1083088865 | @sibilev_fox         | user   | 13:24 28.11.2025 | verification  | 30       | 5      | False    | True   
-383447022  | @dimaa_berg          | user   | 17:32 28.11.2025 | profile       | 30       | 5      | True     | False  
+ID         | Username             | Status | Date             | Stage           | Messages | Credit | Prepared | FromRef
+5605002329 | @DKondrin            | user   | 03:48 29.11.2025 | pulse           | 30       | 5      | False    | False  
+350314587  | @ivanchenko_inga     | user   | 12:27 28.11.2025 | was sent        | 30       | 5      | False    | True   
+8009445791 | @None                | user   | 16:17 28.11.2025 | pulse           | 30       | 5      | False    | False  
+227307134  | @boobsmummy          | user   | 16:26 28.11.2025 | pulse           | 30       | 5      | False    | False  
+6414170876 | @promanager7         | user   | 13:23 28.11.2025 | send_standard   | 30       | 5      | False    | False  
+7625478313 | @vikki_vorobyova     | user   | 12:32 28.11.2025 | neurohub        | 30       | 5      | False    | True   
+209409315  | @alexandrovicholga   | user   | 15:02 29.11.2025 | menu            | 30       | 5      | False    | True   
+6064307479 | @Joker_Asist_LeadNet | user   | 13:08 28.11.2025 | pulse           | 30       | 20     | True     | False  
+640678846  | @lebedevdsn          | user   | 12:39 28.11.2025 | traffic         | 30       | 5      | False    | False  
+5551133953 | @Iamnikol            | user   | 11:03 28.11.2025 | fastlane        | 30       | 5      | False    | True   
+359444942  | @Lopatata            | user   | 10:59 28.11.2025 | enter_product   | 30       | 15     | True     | False  
+1767480213 | @svobodnaja_ya       | user   | 11:12 28.11.2025 | verification    | 30       | 5      | False    | True   
+141591969  | @sokolovmo           | user   | 12:33 28.11.2025 | delta           | 30       | 5      | False    | True   
+355873685  | @alenka_honey        | user   | 18:35 28.11.2025 | pulse           | 30       | 5      | False    | False  
+5074585119 | @Sultan_Mentor       | user   | 15:03 29.11.2025 | menu            | 30       | 5      | False    | True   
+563372905  | @dorohovmark         | user   | 12:45 28.11.2025 | menu            | 30       | 5      | False    | True   
+1166034031 | @polcyy              | user   | 05:48 29.11.2025 | give_chats      | 30       | 30     | True     | False  
+471345280  | @Lyama               | user   | 12:27 28.11.2025 | menu            | 30       | 5      | False    | True   
+1114066533 | @Anr432              | user   | 13:09 28.11.2025 | traffic         | 30       | 5      | False    | False  
+8501687555 | @c1pyright           | user   | 17:33 28.11.2025 | menu            | 30       | 5      | False    | False  
+7860688114 | None                 | None   | 12:42 28.11.2025 | send_fastlane   | None     | None   | None     | None   
+7432019668 | @Nikitaa_SVR         | user   | 13:25 28.11.2025 | enter_product   | 30       | 5      | False    | True   
+575321025  | @avgvstv5            | user   | 15:09 29.11.2025 | start_pulse     | 30       | 5      | False    | True   
+1662503671 | @maskkkk2            | user   | 13:32 28.11.2025 | enter_product   | 30       | 5      | False    | True   
+8235023857 | @musl_imoney         | user   | 04:12 29.11.2025 | menu            | 30       | 5      | False    | False  
+8243174411 | @mrRobot40           | user   | 07:30 28.11.2025 | start_zalp      | None     | None   | False    | None   
+8234278566 | @david_miami7        | user   | 20:09 28.11.2025 | pulse           | 30       | 5      | False    | False  
+7901539776 | @Oksanateamlid       | user   | 09:49 28.11.2025 | start_pulse     | 30       | 40     | True     | False  
+758123104  | @haise1129919        | user   | 04:11 29.11.2025 | pulse           | 30       | 5      | False    | False  
+8507621334 | @VladMontagerr       | user   | 07:52 29.11.2025 | menu            | 30       | 5      | False    | False  
+783349017  | None                 | None   | 10:43 28.11.2025 | pulse           | None     | None   | True     | None   
+1083088865 | @sibilev_fox         | user   | 13:24 28.11.2025 | verification    | 30       | 5      | False    | True   
+248554092  | @semenovbasil        | user   | 15:50 29.11.2025 | enter_product   | 30       | 5      | False    | False  
+888005446  | @nnsvt               | user   | 20:22 28.11.2025 | menu            | 30       | 5      | False    | True   
+1540931910 | @Adamm1753           | user   | 15:55 29.11.2025 | traffic         | 30       | 5      | False    | False  
+34154245   | @Jamius              | user   | 21:49 28.11.2025 | pulse           | 30       | 5      | False    | False  
+383447022  | @dimaa_berg          | user   | 17:32 28.11.2025 | profile         | 30       | 5      | True     | False  
+638251652  | @bugaev_pavel        | user   | 18:10 28.11.2025 | work_in_place   | 30       | 5      | True     | False  
+6891198267 | @fiery_21            | user   | 17:18 29.11.2025 | traffic         | 30       | 5      | False    | False  
+873105563  | @nell_gikramina      | user   | 04:26 29.11.2025 | pulse           | 30       | 5      | False    | False  
+823065277  | @SvetlanaAllyanova   | user   | 14:40 29.11.2025 | how_works_pulse | 30       | 5      | False    | True   
+430210095  | @singleeva_ba        | user   | 08:04 29.11.2025 | was sent        | 30       | 5      | False    | False  
+5112369815 | @IgorVasnetsov       | user   | 06:42 29.11.2025 | verification    | 30       | 5      | False    | True   
+5415282605 | @aficionata          | user   | 12:40 28.11.2025 | verification    | 30       | 5      | False    | True   
+100239624  | @GeorgeVegas         | user   | 18:35 29.11.2025 | pulse           | 30       | 5      | False    | False  

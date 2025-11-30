@@ -5,9 +5,7 @@ def get_start_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=i18n.btn.pulse(), callback_data='pulse')],
-            [InlineKeyboardButton(text=i18n.btn.verification(), callback_data='verification'), InlineKeyboardButton(text=i18n.btn.neurohub(), callback_data='neurohub')],
-            [InlineKeyboardButton(text=i18n.btn.pro_reactor(), callback_data='pro_reactor'), InlineKeyboardButton(text=i18n.btn.traffic(), callback_data='traffic')],
-            [InlineKeyboardButton(text=i18n.btn.support(), url='https://t.me/assistpers')]
+            [InlineKeyboardButton(text=i18n.btn.pro_reactor(), callback_data='pro_reactor'), InlineKeyboardButton(text=i18n.btn.support(), url='https://t.me/assistpers')]
         ]
     )
 
@@ -31,16 +29,18 @@ def get_pulse_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
         ]
     )
 
-def get_workpulse_kbd(i18n: TranslatorRunner, up_text: str | None = None, down_text: str | None = None, up: str = '', down: str = '', have_up: bool = True, have_down: bool = True, have_back: bool = True) -> InlineKeyboardMarkup:
+def get_workpulse_kbd(i18n: TranslatorRunner, up_text: str | None = None, down_text: str | None = None, back_text: str | None = None, up: str = '', down: str = '', back: str = '', have_up: bool = True, have_down: bool = True, have_back: bool = True) -> InlineKeyboardMarkup:
     kbd: list[list[InlineKeyboardButton]] = []
     up_text = up_text if up_text else i18n.btn.previous()
     down_text = down_text if down_text else i18n.btn.next()
+    back_text = back_text if back_text else i18n.btn.back()
+    back = back if back else 'back_pulse'
     if have_up:
         kbd.append([InlineKeyboardButton(text=up_text, callback_data=up)])
     if have_down:
         kbd.append([InlineKeyboardButton(text=down_text, callback_data=down)])
     if have_back:
-        kbd.append([InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')])
+        kbd.append([InlineKeyboardButton(text=back_text, callback_data=back)])
     return InlineKeyboardMarkup(inline_keyboard=kbd)
 
 def give_chats_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
@@ -74,7 +74,7 @@ def get_zalp_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
 def get_end_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.previous(), callback_data='nativ_sent')],
+            [InlineKeyboardButton(text=i18n.btn.previous(), callback_data='try_stories')],
             [InlineKeyboardButton(text=i18n.btn.constructor(), callback_data='constructor')],
             [InlineKeyboardButton(text=i18n.btn.tarifs(), callback_data='tarifs')],
             [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')]
@@ -84,10 +84,10 @@ def get_end_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
 def get_tarif_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.week(), callback_data='pulse_week')],
-            [InlineKeyboardButton(text=i18n.btn.month(), callback_data='pulse_month')],
-            [InlineKeyboardButton(text=i18n.btn.month_plus(), callback_data='pulse_month_plus')],
-            [InlineKeyboardButton(text=i18n.btn.hundred_leads(), callback_data='pulse_hundred_leads')],
+            [InlineKeyboardButton(text=i18n.btn.pulse_testum(), callback_data='pulse_testum')],
+            [InlineKeyboardButton(text=i18n.btn.pulse_base(), callback_data='pulse_base')],
+            [InlineKeyboardButton(text=i18n.btn.pulse_pro(), callback_data='pulse_pro')],
+            [InlineKeyboardButton(text=i18n.btn.pulse_ultra(), callback_data='pulse_ultra')],
             [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_pulse')]
         ]
     )
@@ -118,7 +118,7 @@ def get_delta_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
 def get_standard_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.cancel(), callback_data='back_verif'), InlineKeyboardButton(text=i18n.btn.go_standard(), callback_data='product')]
+            [InlineKeyboardButton(text=i18n.btn.cancel(), callback_data='back_start'), InlineKeyboardButton(text=i18n.btn.go_standard(), callback_data='product')]
         ]
     )
 
@@ -133,7 +133,7 @@ def get_send_kbd(i18n: TranslatorRunner, send_data: str, back_data: str) -> Inli
 def get_success_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.neurohub(), callback_data='neurohub')],
+            # [InlineKeyboardButton(text=i18n.btn.neurohub(), callback_data='neurohub')],
             [InlineKeyboardButton(text=i18n.btn.menu(), callback_data='back_start')]
         ]
     )

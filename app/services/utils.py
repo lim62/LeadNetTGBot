@@ -1,13 +1,12 @@
 import asyncio
 
 from random import choice
+from redis import Redis
 from pyrogram import Client
 from pyrogram.types import InputMediaPhoto, InputMediaVideo
 from pyrogram.enums.parse_mode import ParseMode
-
-async def account_waiting(client: Client, wait: int, where: list) -> None:
-    await asyncio.sleep(wait)
-    where.append(client)
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from bot.database.requests import delete_account
 
 def prepare_text(text: str):
     past_text: str = text
@@ -23,6 +22,29 @@ def prepare_text(text: str):
             return text
     else:
         return past_text
+
+async def account_waiting(client: Client, wait: int, where: list) -> None:
+    await asyncio.sleep(wait)
+    where.append(client)
+
+async def get_next_client(clients: list[Client], rstorage: Redis, telegram_id: int) -> Client:
+    number: int = int(await rstorage.get(f'lencli{telegram_id}')) + 1
+    number = 0 if number == len(clients) else number
+    await rstorage.set(f'lencli{telegram_id}', number)
+    print(len(clients))
+    print(number)
+    return clients[number]
+
+async def deleting_account(client: Client, clients: list[Client], old_clients: list[Client], session_maker: async_sessionmaker) -> None:
+    try:
+        clients.remove(client)
+    except Exception:
+        pass
+    try:
+        old_clients.remove(client)
+    except Exception:
+        pass
+    await delete_account(session_maker=session_maker, phone=client.phone_number)
 
 async def sending(client: Client, message: any, chat: any, reply_id: int = None) -> int:
     if isinstance(chat, str):

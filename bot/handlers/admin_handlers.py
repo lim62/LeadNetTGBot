@@ -10,7 +10,6 @@ from aiogram.fsm.context import FSMContext
 from fluentogram import TranslatorRunner
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from app.settings import add_client
-from app.services.parser import proccess_async_parser
 from app.services.groups import process_async_groups
 from bot.states import AdminMainSG
 from bot.utils import format_database, process_users_mailing, format_accounts_db
@@ -352,7 +351,7 @@ async def cmd_start_parsing(msg: Message, i18n: TranslatorRunner, clients: list[
     file_content = await bot.download_file(file_path=file_path)
     links = [link.strip() for link in (file_content.read().decode('utf-8')).split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in file_content.read().decode('utf-8') if link.startswith('t.me')]
     msg = await msg.answer(text=i18n.text.admin.start_parsing())
-    asyncio.gather(proccess_async_parser(clients=clients, i18n=i18n, rstorage=rstorage, msg=msg, links=links))
+    # asyncio.gather(proccess_async_parser(clients=clients, i18n=i18n, rstorage=rstorage, msg=msg, links=links))
     await state.clear()
 
 @admin_router.callback_query(F.data == 'groups')
