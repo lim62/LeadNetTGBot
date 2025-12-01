@@ -18,12 +18,14 @@ from bot.keyboards import (
     get_success_kbd, get_standard_kbd, get_time_kbd,
     get_leadpanel_kbd, get_pulse_kbd, get_tarif_kbd,
     get_workpulse_kbd, get_offer_kdb, get_zalp_kbd,
-    give_chats_kbd, get_end_kbd
+    give_chats_kbd, get_end_kbd, get_yes_no_kbd
 )
 from bot.utils import change_photo
 from app.services.groups import process_async_groups
 
 user_router = Router()
+
+tasks: dict[int, asyncio.Task] = {}
 
 @user_router.message(CommandStart())
 @user_router.callback_query(F.data == 'back_start')
@@ -271,8 +273,9 @@ async def cmd_show_offer(call: CallbackQuery, i18n: TranslatorRunner, session_ma
     )
 
 @user_router.callback_query(F.data == 'starting')
-async def cmd_starting(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis, session_maker: async_sessionmaker) -> None:
-    for client in clients:
+async def cmd_starting(call: CallbackQuery, i18n: TranslatorRunner, clients: dict[Client, int], rstorage: Redis, session_maker: async_sessionmaker) -> None:
+    our_clients: list[Client] = [client for client, owner in clients.items() if owner == 0]
+    for client in our_clients:
         client: Client
         await client.send_video(
             chat_id='me',
@@ -294,7 +297,7 @@ async def cmd_starting(call: CallbackQuery, i18n: TranslatorRunner, clients: lis
             i18n=i18n,
             rstorage=rstorage,
             session_maker=session_maker,
-            delay=1,
+            MESSAGE_DELAY=1,
             have_logs=False,
             for_all=False,
             from_zalp=True
@@ -407,12 +410,16 @@ async def cmd_constructor(call: CallbackQuery, i18n: TranslatorRunner, session_m
 
 @user_router.callback_query(F.data == 'start_pulse')
 @user_router.callback_query(F.data == 'back_start_pulse')
-async def cmd_start_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker) -> None:
+async def cmd_start_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_maker: async_sessionmaker, state: FSMContext) -> None:
     status = (await get_all_users(session_maker=session_maker, telegram_id=call.from_user.id))[0]['status']
+    await call.message.delete()
     if status and status != 'user':
-        pass
+        await call.message.answer(
+            text=i18n.text.user.ask_offer(),
+            reply_markup=get_back_kbd(i18n=i18n, callback_data='back_pulse')
+        )
+        await state.set_state(UserMainSG.load_offer)
     else:
-        await call.message.delete()
         await call.message.answer(
             text=i18n.text.user.need_status(name=call.from_user.first_name),
             reply_markup=get_back_kbd(i18n=i18n, callback_data='back_pulse')
@@ -422,6 +429,93 @@ async def cmd_start_pulse(call: CallbackQuery, i18n: TranslatorRunner, session_m
         telegram_id=call.from_user.id,
         stage='start_pulse'
     )
+
+@user_router.message(StateFilter(UserMainSG.load_offer))
+async def cmd_offer_clients(msg: Message, i18n: TranslatorRunner, rstorage: Redis, state: FSMContext, clients: dict[Client, int]) -> None:
+    our_clients: list[Client] = [client for client, owner in clients.items() if owner == msg.from_user.id]
+    for client in our_clients:
+        client: Client
+        value = await rstorage.get(client.phone_number)
+        if value and int(value):
+            if msg.media_group_id:
+                await msg.answer(
+                    text=i18n.text.admin.no_media_groups(),
+                    reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+                )
+                return
+            elif getattr(msg, "photo", None):
+                media = msg.photo.file_id
+                await client.send_photo(chat_id='me', photo=media, caption=msg.caption, caption_entities=msg.caption_entities)
+            elif getattr(msg, "video", None):
+                media = msg.video.file_id
+                await client.send_video(chat_id='me', video=media, caption=msg.caption, caption_entities=msg.caption_entities)
+            else:
+                await client.send_message(chat_id='me', text=msg.text, entities=msg.entities)
+    await msg.answer(
+        text=i18n.text.user.ask_chats(),
+        reply_markup=get_workpulse_kbd(
+            i18n=i18n,
+            have_up=False,
+            down='start_paid_mailing',
+            down_text=i18n.btn.contin(),
+            back='back_pulse'
+        )
+    )
+    await state.set_state(UserMainSG.load_chats)
+
+@user_router.callback_query(F.data == 'start_paid_mailing')
+@user_router.message(StateFilter(UserMainSG.load_chats))
+async def cmd_chats_clients(obj: Message | CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+    await state.clear()
+    msg: Message = obj if isinstance(obj, Message) else obj.message
+    path: str = f'app/database/groups/links{obj.from_user.id}.txt'
+    links: list[str] = []
+    if isinstance(obj, CallbackQuery):
+        await obj.message.delete()
+    if isinstance(obj, Message):
+        if not os.path.exists(path):
+            with open('app/database/groups/links.txt', 'r') as file:
+                links = [link.strip() for link in file.readlines() if link.startswith('http')] + [f'https://{link.strip()}' for link in file.readlines() if link.startswith('t.me')] 
+            with open(path, 'w') as file:
+                file.write('\n'.join(links))
+        links = [link.strip() for link in msg.text.split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in msg.text.split('\n') if link.startswith('t.me')] 
+        with open(path, 'a') as file:
+            file.write('\n'.join(links))
+    await msg.answer(
+        text=i18n.text.user.sure_start(),
+        reply_markup=get_yes_no_kbd(i18n=i18n, on_yes='sure_paid_mailing', on_no='back_pulse')
+    )
+
+@user_router.callback_query(F.data == 'sure_paid_mailing')
+async def cmd_start_(call: CallbackQuery, i18n: TranslatorRunner, rstorage: Redis, session_maker: async_sessionmaker, clients: dict[Client, int]) -> None:
+    our_clients: list[Client] = [client for client, owner in clients.items() if owner == call.from_user.id]
+    task: asyncio.Task | None = None
+    try:
+        task = tasks[call.from_user.id]
+    except Exception: 
+        pass
+    if task:
+        task.cancel()
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.start_groups(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='back_pulse')
+    )
+    task = asyncio.ensure_future(
+        process_async_groups(
+            old_clients=our_clients,
+            msg=call.message,
+            telegram_id=call.from_user.id,
+            i18n=i18n,
+            rstorage=rstorage,
+            session_maker=session_maker,
+            MESSAGE_DELAY=1500,
+            have_logs=False,
+            for_all=False,
+            from_zalp=False
+        )
+    )
+    tasks[call.from_user.id] = task
 
 @user_router.callback_query(F.data == 'tarifs')
 @user_router.callback_query(F.data == 'back_tarifs')

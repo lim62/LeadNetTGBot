@@ -103,7 +103,8 @@ async def upsert_account(
         proxy_hostname=proxy_hostname,
         proxy_port=proxy_port,
         proxy_username=proxy_username,
-        proxy_password=proxy_password
+        proxy_password=proxy_password,
+        owner=1
     )
     stmt = (
         insert(Account)
@@ -145,6 +146,7 @@ async def get_all_accounts(session_maker: async_sessionmaker[AsyncSession]) -> l
                 "proxy_port": acc.proxy_port,
                 "proxy_username": acc.proxy_username,
                 "proxy_password": acc.proxy_password,
+                'owner': acc.owner,
             }
             for acc in accounts
         ]

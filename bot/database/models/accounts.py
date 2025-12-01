@@ -18,3 +18,4 @@ class Account(Base):
     proxy_port: Mapped[int] = mapped_column(Integer, nullable=False)
     proxy_username: Mapped[str] = mapped_column(String, nullable=False)
     proxy_password: Mapped[str] = mapped_column(String, nullable=False)
+    owner: Mapped[int] = mapped_column(BigInteger, nullable=True)

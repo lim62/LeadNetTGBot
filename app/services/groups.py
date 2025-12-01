@@ -42,7 +42,7 @@ async def process_async_groups(
     i18n: TranslatorRunner,
     rstorage: Redis,
     session_maker: async_sessionmaker,
-    delay: int = 300,
+    MESSAGE_DELAY: int = 300,
     have_logs: bool = True,
     for_all: bool = False,
     from_zalp: bool = False
@@ -74,7 +74,7 @@ async def process_async_groups(
     chat = None
     thread_id: int = None
     try:
-        delay: int = ceil(delay / len(new_clients))
+        delay: int = ceil(MESSAGE_DELAY / len(new_clients))
         delay = 0 if delay == 1 else delay
         with open((f"app/database/groups/links{telegram_id}.txt"), "r") as file:
             links = [link.strip() for link in file.readlines() if link.startswith("http")]

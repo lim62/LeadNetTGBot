@@ -4,8 +4,8 @@ from fluentogram import TranslatorRunner
 def get_start_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.pulse(), callback_data='pulse')],
-            [InlineKeyboardButton(text=i18n.btn.pro_reactor(), callback_data='pro_reactor'), InlineKeyboardButton(text=i18n.btn.support(), url='https://t.me/assistpers')]
+            [InlineKeyboardButton(text=i18n.btn.support(), url='https://t.me/assistpers')],
+            [InlineKeyboardButton(text=i18n.btn.pulse(), callback_data='pulse'), InlineKeyboardButton(text=i18n.btn.pro_reactor(), callback_data='pro_reactor')]
         ]
     )
 
@@ -118,7 +118,7 @@ def get_delta_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
 def get_standard_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=i18n.btn.cancel(), callback_data='back_start'), InlineKeyboardButton(text=i18n.btn.go_standard(), callback_data='product')]
+            [InlineKeyboardButton(text=i18n.btn.true_back(), callback_data='back_start'), InlineKeyboardButton(text=i18n.btn.go_standard(), callback_data='product')]
         ]
     )
 

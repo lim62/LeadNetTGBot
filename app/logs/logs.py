@@ -46,12 +46,12 @@ from aiogram.types import Message
 
 async def print_info(msg: Message, to_print: str, have_logs: bool = True) -> None:
     if have_logs:
-      await msg.answer(text=f'<b>[INFO]</b> <i>{to_print}</i>')
+      await msg.answer(text=f'<b>[INFO]</b> <i>{to_print}</i>', disable_web_page_preview=True)
 
 async def print_warn(msg: Message, to_print: str, have_logs: bool = True) -> None:
     if have_logs:
-      await msg.answer(text=f'<b>[WARN]</b> <i>{to_print}</i>')
+      await msg.answer(text=f'<b>[WARN]</b> <i>{to_print}</i>', disable_web_page_preview=True)
 
 async def print_error(msg: Message, to_print: str, have_logs: bool = True) -> None:
     if have_logs:
-      await msg.answer(text=f'<b>[ERROR]</b> <i>{to_print}</i>')
+      await msg.answer(text=f'<b>[ERROR]</b> <i>{to_print}</i>', disable_web_page_preview=True)

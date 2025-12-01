@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from bot.config import Config
 
 class DataMiddleware(BaseMiddleware):
-    def __init__(self, config: Config, bot: Bot, clients: list[Client], rstorage: RedisStorage, session_maker: async_sessionmaker[AsyncSession]):
+    def __init__(self, config: Config, bot: Bot, clients: dict[Client, int], rstorage: RedisStorage, session_maker: async_sessionmaker[AsyncSession]):
         super().__init__()
         self.config = config
         self.bot = bot

@@ -1,4 +1,5 @@
 from redis import Redis
+from pyrogram import Client
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fluentogram import TranslatorRunner
 
@@ -23,17 +24,18 @@ def get_startpanel_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=i18n.btn.admin.accounts(), callback_data='accounts')],
             [InlineKeyboardButton(text=i18n.btn.admin.mailing(), callback_data='mailing'), InlineKeyboardButton(text=i18n.btn.admin.to_menu(), callback_data='back_start')],
             [InlineKeyboardButton(text=i18n.btn.admin.database(), callback_data='database'), InlineKeyboardButton(text=i18n.btn.admin.status(), callback_data='change_status')],
-            [InlineKeyboardButton(text=i18n.btn.soft(), callback_data='soft')]
+            [InlineKeyboardButton(text=i18n.btn.soft(), callback_data='before_soft')]
         ]
     )
 
 async def get_accounts_kbd(i18n: TranslatorRunner, clients: list, rstorage: Redis) -> InlineKeyboardMarkup:
     keyboard: list[list[InlineKeyboardButton]] = []
     for client in clients:
+        client: Client
         phone = client.phone_number
         is_active = int(await rstorage.get(phone))
         new_phone = f'💥 {phone}' if is_active == 1 else phone
-        keyboard.append([InlineKeyboardButton(text=new_phone, callback_data=phone)])
+        keyboard.append([InlineKeyboardButton(text=f'{new_phone} {(client.me.username)[:7]}', callback_data=phone)])
     keyboard.append([InlineKeyboardButton(text=i18n.btn.add_accs(), callback_data='add_accs'), InlineKeyboardButton(text=i18n.btn.delete_accs(), callback_data='delete_accs')])
     keyboard.append([InlineKeyboardButton(text=i18n.btn.recieve_code(), callback_data='receive_code')])
     keyboard.append([InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_admin_menu')])
@@ -62,6 +64,7 @@ def get_soft_kbd(i18n: TranslatorRunner) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=i18n.btn.private(), callback_data='private')],
             [InlineKeyboardButton(text=i18n.btn.leads(), callback_data='leads')],
             [InlineKeyboardButton(text=i18n.btn.dustsos(), callback_data='dustsos')],
+            [InlineKeyboardButton(text=i18n.btn.cancel_tasks(), callback_data='cancel_tasks')],
             [InlineKeyboardButton(text=i18n.btn.back(), callback_data='back_admin_menu')]
         ]
     )

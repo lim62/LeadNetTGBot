@@ -8,32 +8,32 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from bot.database.requests import get_all_accounts, upsert_account
 
 async def start_clients(session_maker: async_sessionmaker, rstorage: Redis) -> None:
-    clients: list[Client] = [
-        Client(
-            name=account['phone'][1:],
-            api_id=account['api_id'],
-            api_hash=account['api_hash'],
-            app_version=account['app_version'],
-            device_model=account['device_model'],
-            system_version=account['system_version'],
-            lang_code=account['lang_code'],
-            phone_number=account['phone'],
-            password=account['password'],
-            parse_mode=ParseMode.HTML,
-            workdir='sessions',
-            proxy=dict(
-                scheme=account['proxy_scheme'],
-                hostname=account['proxy_hostname'],
-                port=int(account['proxy_port']),
-                username=account['proxy_username'],
-                password=account['proxy_password']
+    clients: dict[Client, int] = {}
+    for account in await get_all_accounts(session_maker=session_maker):
+        client = Client(
+                name=account['phone'][1:],
+                api_id=account['api_id'],
+                api_hash=account['api_hash'],
+                app_version=account['app_version'],
+                device_model=account['device_model'],
+                system_version=account['system_version'],
+                lang_code=account['lang_code'],
+                phone_number=account['phone'],
+                password=account['password'],
+                parse_mode=ParseMode.HTML,
+                workdir='sessions',
+                proxy=dict(
+                    scheme=account['proxy_scheme'],
+                    hostname=account['proxy_hostname'],
+                    port=int(account['proxy_port']),
+                    username=account['proxy_username'],
+                    password=account['proxy_password']
+                )
             )
-        )
-        for account in await get_all_accounts(session_maker=session_maker)
-    ]
-    for client in clients:
+        clients[client] = int(account['owner'])
+    for client in clients.keys():
         asyncio.gather(schedule_starting(client=client, rstorage=rstorage))
-    for client in clients:
+    for client in clients.keys():
         await rstorage.set(client.phone_number, 0)
     return clients
     

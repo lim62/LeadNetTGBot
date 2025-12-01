@@ -31,8 +31,6 @@ async def get_next_client(clients: list[Client], rstorage: Redis, telegram_id: i
     number: int = int(await rstorage.get(f'lencli{telegram_id}')) + 1
     number = 0 if number == len(clients) else number
     await rstorage.set(f'lencli{telegram_id}', number)
-    print(len(clients))
-    print(number)
     return clients[number]
 
 async def deleting_account(client: Client, clients: list[Client], old_clients: list[Client], session_maker: async_sessionmaker) -> None:

@@ -16,12 +16,13 @@ from bot.utils import format_database, process_users_mailing, format_accounts_db
 from bot.keyboards import (
     get_yes_no_kbd, get_accepted_kbd, get_declined_kbd,
     get_startpanel_kbd, get_back_kbd, get_accounts_kbd, get_soft_kbd,
-    get_change_status_kbd
+    get_change_status_kbd, get_workpulse_kbd
 )
 from bot.database.requests import get_all_users, upsert_user, delete_account
 from bot.config import Config
 
 admin_router = Router()
+tasks: dict[str, asyncio.Task] = {}
 
 @admin_router.message(CommandStart())
 @admin_router.callback_query(F.data == 'back_admin_menu')
@@ -319,18 +320,31 @@ async def cmd_end_changing_status(call: CallbackQuery, i18n: TranslatorRunner, s
             reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
         )
 
-@admin_router.callback_query(F.data == 'soft')
+@admin_router.callback_query(F.data == 'before_soft')
 async def cmd_admin_soft(call: CallbackQuery, i18n: TranslatorRunner, clients: list[Client], rstorage: Redis) -> None:
+    await call.message.delete()
     for client in clients:
         if int(await rstorage.get(client.phone_number)):
-            await call.message.edit_text(
-                text=i18n.text.admin.soft(),
-                reply_markup=get_soft_kbd(i18n=i18n)
+            await call.message.answer(
+                text=i18n.text.admin.logs(),
+                reply_markup=get_workpulse_kbd(i18n=i18n, up='logs_1', down='logs_0', up_text=i18n.btn.yes(), down_text=i18n.btn.no(), back='back_admin_menu')
             )
             return
-    await call.message.edit_text(
+    await call.message.answer(
         text=i18n.text.admin.choose_accs(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='back_admin_menu')
+    )
+
+@admin_router.callback_query(F.data.startswith('logs_'))
+@admin_router.callback_query(F.data.startswith('soft'))
+async def cmd_logs_choose(call: CallbackQuery, i18n: TranslatorRunner, rstorage: Redis) -> None:
+    if 'logs_' in call.data:
+        have_logs: bool = True if (call.data.split('_')[-1]) else False
+        await rstorage.set(f'logs{call.from_user.id}', int(have_logs))
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.soft(),
+        reply_markup=get_soft_kbd(i18n=i18n)
     )
 
 @admin_router.callback_query(F.data == 'parsing')
@@ -354,9 +368,28 @@ async def cmd_start_parsing(msg: Message, i18n: TranslatorRunner, clients: list[
     # asyncio.gather(proccess_async_parser(clients=clients, i18n=i18n, rstorage=rstorage, msg=msg, links=links))
     await state.clear()
 
+
 @admin_router.callback_query(F.data == 'groups')
-async def cmd_admin_groups_delay(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
-    await call.message.edit_text(
+async def cmd_admin_groups_type(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext) -> None:
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.groups_type(),
+        reply_markup=get_workpulse_kbd(
+            i18n=i18n,
+            up='groups_type_links',
+            down='groups_type_all',
+            back='soft',
+            up_text=i18n.btn.groups_links(),
+            down_text=i18n.btn.groups_all()
+        )
+    )
+
+@admin_router.callback_query(F.data.startswith('groups_type_'))
+async def cmd_admin_groups_delay(call: CallbackQuery, i18n: TranslatorRunner, state: FSMContext, rstorage: Redis) -> None:
+    groups_type = call.data.split('_')[-1]
+    await rstorage.set(f'groups_type{call.from_user.id}', groups_type)
+    await call.message.delete()
+    await call.message.answer(
         text=i18n.text.admin.groups_delay(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
     )
@@ -368,7 +401,7 @@ async def cmd_admin_groups_list(msg: Message, i18n: TranslatorRunner, state: FSM
         text=i18n.text.admin.groups_list(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
     )
-    await rstorage.set('delay', msg.text)
+    await rstorage.set(f'delay{msg.from_user.id}', msg.text)
     await state.set_state(AdminMainSG.groups_list)
 
 @admin_router.message(StateFilter(AdminMainSG.groups_list))
@@ -382,8 +415,12 @@ async def cmd_admin_groups_offer(msg: Message, i18n: TranslatorRunner, bot: Bot,
     file_path = (await bot.get_file(file_id=msg.document.file_id)).file_path
     file_content = await bot.download_file(file_path=file_path)
     links = [link.strip() for link in (file_content.read().decode('utf-8')).split('\n') if link.startswith('http')] + [f'https://{link.strip()}' for link in file_content.read().decode('utf-8') if link.startswith('t.me')]
-    with open(('app/database/groups/links.txt'), 'w') as file:
+    with open((f'app/database/groups/links{msg.from_user.id}.txt'), 'w') as file:
         file.write('\n'.join(links))
+    used_path: str = f'app/database/groups/used_links{msg.from_user.id}.txt'
+    if not os.path.exists(used_path):
+        with open((used_path), 'w') as file:
+            file.write(' ')
     await msg.answer(
         text=i18n.text.admin.groups_offer(),
         reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
@@ -393,6 +430,7 @@ async def cmd_admin_groups_offer(msg: Message, i18n: TranslatorRunner, bot: Bot,
 @admin_router.message(StateFilter(AdminMainSG.groups_offer))
 async def cmd_admin_groups_stories(msg: Message, i18n: TranslatorRunner, state: FSMContext, config: Config, bot: Bot, rstorage: Redis, clients: Client) -> None:
     await state.clear()
+    old_clients: list[Client] = []
     for client in clients:
         client: Client
         value = await rstorage.get(client.phone_number)
@@ -411,11 +449,38 @@ async def cmd_admin_groups_stories(msg: Message, i18n: TranslatorRunner, state: 
                 await client.send_video(chat_id='me', video=media, caption=msg.caption, caption_entities=msg.caption_entities)
             else:
                 await client.send_message(chat_id='me', text=msg.text, entities=msg.entities)
-            await msg.answer(
-                text=i18n.text.admin.start_groups(),
-                reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
-            )
-            asyncio.gather(process_async_groups())
+            old_clients.append(client)
+    await msg.answer(
+        text=i18n.text.admin.start_groups(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    for_all: bool = True if (await rstorage.get(f'groups_type{msg.from_user.id}')) == 'all' else False
+    task = asyncio.gather(
+        process_async_groups(
+            old_clients=old_clients,
+            msg=msg,
+            telegram_id=msg.from_user.id,
+            i18n=i18n,
+            rstorage=rstorage,
+            session_maker=async_sessionmaker,
+            MESSAGE_DELAY=int(await rstorage.get(f'delay{msg.from_user.id}')),
+            have_logs=bool(await rstorage.get(f'logs{msg.from_user.id}')),
+            for_all=for_all,
+            from_zalp=False
+        )
+    )
+    tasks[msg.from_user.id] = task
+
+@admin_router.callback_query(F.data == 'cancel_tasks')
+async def cmd_cancel_tasks(call: CallbackQuery, i18n: TranslatorRunner) -> None:
+    await call.message.delete()
+    await call.message.answer(
+        text=i18n.text.admin.tasks_cancelled(),
+        reply_markup=get_back_kbd(i18n=i18n, callback_data='soft')
+    )
+    if call.from_user.id in tasks.keys():
+        for task in tasks[call.from_user.id]:
+            task.cancel()
 
 @admin_router.callback_query(F.data.startswith('decline'))
 @admin_router.callback_query(F.data.startswith('call'))
